@@ -564,6 +564,8 @@ window.TREE = {json.dumps(tree_data, ensure_ascii=False, indent=2)};
 """
     with open("docs/data.js", "w", encoding="utf-8") as f:
         f.write(js_content)
+    with open("data.js", "w", encoding="utf-8") as f:
+        f.write(js_content)
         
     print(f"Successfully generated {len(scenarios)} scenarios and exported to data/scenarios.json and docs/data.js")
 

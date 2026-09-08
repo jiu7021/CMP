@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>반도체 CMP 가상계측 & 알람 이원화 시뮬레이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="snowui-shell.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+
+<aside class="rail">
+  <div class="rail-brand"><span class="rail-dot"></span><span>CMP 가상계측</span></div>
+
+  <div class="rail-sec">이동</div>
+  <nav class="rail-group">
+    <a class="rail-row" href="#s-live"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 8V2.2M8 8l4.3 4.3"/></svg>공정 현황</a>
+    <a class="rail-row" href="#s-chart"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5l3.4-4 2.6 2.4L13.8 4"/><path d="M2 2v12h12"/></svg>가상계측 · 센서</a>
+    <a class="rail-row" href="#s-log"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 4.2h10.8M2.6 8h10.8M2.6 11.8h7"/></svg>알람 · 보정 이력</a>
+    <a class="rail-row" href="#s-about"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.2h5.5L13 5.6v8.2H4z"/><path d="M9.3 2.4v3.4h3.4"/></svg>이 화면 읽는 법</a>
+  </nav>
+
+  <nav class="rail-group rail-ext">
+    <a class="rail-row" href="project.html">프로젝트 기록 ↗</a>
+    <a class="rail-row" href="https://github.com/jiu7021/CMP" target="_blank">저장소 ↗</a>
+    <a class="rail-row" href="https://www.phmsociety.org/events/conference/phm/16/data-challenge" target="_blank">PHM 2016 벤치마크 ↗</a>
+  </nav>
+
+  <div class="rail-foot">SnowUI Design System</div>
+</aside>
+
+<div class="col">
+  <header class="topbar">
+    <div class="crumb"><span>시뮬레이터</span><span class="sep">/</span><b id="crumb-cur">공정 현황</b></div>
+    <div class="topbar-r">
+      <span class="badge ghost" title="PHM 2016 Schema Physics-Informed Synthetic Data">PHM 2016 스키마 물리합성 데이터</span>
+      <span class="badge ghost" id="daybadge">—</span>
+      <a class="btn primary" href="project.html">프로젝트 기록 →</a>
+      <button id="theme-btn" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
+    </div>
+  </header>
+
+  <div class="barwrap">
+    <section class="bar" id="bar">
+      <button id="play" class="play">▶ 재생</button>
+      <button id="rst" class="mini" title="처음으로">↺</button>
+      <button id="end" class="mini" title="끝으로">⏭</button>
+      <div class="clock"><b id="clock">08:00</b><span id="slow">양산 진행 중</span></div>
+      <div class="track"><i id="prog"></i></div>
+      <nav id="spd" class="spd"></nav>
+    </section>
+    <nav class="daybar" id="days"></nav>
+  </div>
+
+  <div class="scroll">
+    <div class="hero">
+      <h1>반도체 CMP 가상계측 & 알람 이원화 시뮬레이터</h1>
+      <p class="sub">삼성 메모리 전공정(DRAM / V-NAND) 3개 챔버(Ch.A STI, Ch.B W-Plug, Ch.C Cu CMP)의 10시간 양산 공정을 재생합니다.
+      슬러리 유량·압력 등 가역적 편차는 R2R APC로 자동 보정되며, 패드·컨디셔너 등 비가역적 소모품 마모는 <b>해당 챔버만 단독 정지</b> 후 교체 복구됩니다.
+      날짜를 선택하고 재생을 누르세요.</p>
+    </div>
+
+    <main>
+
+      <div id="hold" class="hold"></div>
+
+      <!-- 공정 현황 -->
+      <section class="panel" id="s-live">
+        <div class="panel-head"><h2>공정 현황</h2><div class="hint" id="title"></div></div>
+        <div class="kpi-row" id="kpi"></div>
+        <div class="brief-box">
+          <span class="tag">AI 양산 브리핑</span>
+          <p id="brief"></p>
+        </div>
+      </section>
+
+      <!-- 가상계측 & 센서 트렌드 -->
+      <section class="panel" id="s-chart">
+        <div class="panel-head">
+          <h2>가상계측 · 센서 트렌드</h2>
+          <nav id="eqps" class="tabs sm"></nav>
+        </div>
+        <div id="charts"></div>
+        <p class="hint" style="margin-top:14px">세로선은 알람 발생 시점, 붉은 음영은 해당 챔버가 단독 정지된 구간입니다.
+        가상계측 파란선은 센서로부터 실시간 예측한 MRR(연마 제거율)이며, 주황선은 실측값입니다.</p>
+      </section>
+
+      <!-- 알람 & 조치 이력 -->
+      <section class="panel" id="s-log">
+        <div class="panel-head"><h2>알람 · 자동 보정 이력</h2>
+          <nav id="logtabs" class="tabs sm">
+            <button class="on" data-v="alarm">사람 개입 알람 <span id="na"></span></button>
+            <button data-v="action">자동 보정 이력 <span id="nc"></span></button>
+          </nav></div>
+        <div id="log"></div>
+      </section>
+
+      <!-- 이 화면 읽는 법 -->
+      <section class="panel" id="s-about">
+        <div class="panel-head"><h2>이 화면 읽는 법 — CMP 공정 운영 아키텍처</h2>
+          <div class="hint">자세한 공학적 수치와 한계는 <a class="inline-link" href="project.html">프로젝트 기록</a>에 정리되어 있습니다</div></div>
+
+        <h3 class="sub-h">가상계측(Virtual Metrology)이란 무엇인가</h3>
+        <p class="para">CMP(Chemical Mechanical Planarization)는 회전하는 폴리싱 패드와 슬러리(연마액) 화학 반응으로 웨이퍼 표면을 나노미터 수준으로 평탄화하는 전공정 핵심 공정입니다.
+        핵심 품질 지표는 <b>MRR(Material Removal Rate, 단위 시간당 연마 제거율)</b>입니다.
+        모든 웨이퍼를 물리 계측기(박막 두께 측정기)로 실측하면 팹 병목이 발생하므로,
+        설비 센서(다운포스 압력, 플래튼/헤드 회전수, 슬러리 유량, 모터 마찰전류, 패드 온도) 데이터를 학습한 <b>머신러닝 가상계측 모델(MLP/Ridge)</b>로 매 웨이퍼의 MRR을 실시간 추정합니다.</p>
+
+        <h3 class="sub-h">알람 이원화의 핵심: 가역적 이상 vs 비가역적 소모품 마모</h3>
+        <p class="para">기존 팹에서는 사소한 유량 흔들림이나 압력 드리프트에도 일괄 경보가 발생하여 오퍼레이터 피로도가 극심하고 불필요한 라인 정지가 발생했습니다.
+        본 시스템은 이상의 물리적 성격을 판별해 두 갈래로 분기합니다:</p>
+        <table class="kv">
+          <tr><td><b>슬러리 유량 편차 · 캐리어 압력 세팅 드리프트 · 회전속도 편차</b></td><td class="ok">R2R APC 자동 레시피 보정 (무중단)</td></tr>
+          <tr><td><b>폴리싱 패드 수명 한계 (홈 깊이 400μm 미달) · 다이아몬드 컨디셔너 마모</b></td><td class="bad">사람 개입 알람 (해당 챔버 단독 정지)</td></tr>
+        </table>
+
+        <h3 class="sub-h">해당 챔버만 정지되고, 나머지 챔버와 시간은 계속 흐릅니다</h3>
+        <p class="para">예를 들어 <b>9월 2일</b> 시나리오에서 Ch.A의 폴리싱 패드 홈 깊이가 임계선(400μm)에 도달하면,
+        <b>Ch.A만 즉시 정지(RPM 0, 압력 0, 가공 중단)</b>되고 Ch.B와 Ch.C는 정상적으로 웨이퍼를 가공합니다.
+        실제 반도체 팹과 동일하게 조업 시간은 계속 흐르며, 작업자가 결정을 미룰수록 <b>정지 손실 시간(Downtime Loss)</b>이 분 단위로 누적됩니다.
+        상단에 나타나는 <b>[소모품(패드) 교체 완료 · 재가동]</b> 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Ch.A가 즉시 양산에 복귀합니다.</p>
+
+        <h3 class="sub-h">소모품 잔여수명(RUL) 추정</h3>
+        <p class="para">패드 잔여 홈 깊이 및 컨디셔너 가동 시간의 열화 궤적을 분석하여 교체 임계점까지 남은 웨이퍼 매수와 95% 신뢰구간([CI_low, CI_high])을 실시간 제공합니다.
+        위험 수준(CRIT) 이전 단계(MAJ)에서는 라인을 세우지 않고 차기 계획 정비(PM) 일정으로 자동 이관됩니다.</p>
+      </section>
+
+    </main>
+
+    <footer class="ftr">
+      데이터 스키마: PHM 2016 Data Challenge (CMP Benchmark) · 삼성전자 메모리 전공정 CMP 양산 설비 모사 ·
+      가상계측 모델: Advanced MLP (Val R² 0.9710) · <a class="inline-link" href="https://github.com/jiu7021/CMP" target="_blank">GitHub Repository</a>
+    </footer>
+  </div>
+</div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="snowui-shell.js"></script>
+</body>
+</html>
