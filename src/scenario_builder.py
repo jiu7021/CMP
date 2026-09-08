@@ -1,10 +1,10 @@
 """
 scenario_builder.py
-Generates multi-day operational scenarios for Samsung Front-End Memory CMP Fab.
-Models 3 production chambers:
-- Ch.A: STI CMP (Shallow Trench Isolation / Platen 1 Bulk)
-- Ch.B: W-Plug CMP (Tungsten Contact Plug / Platen 2 Fine)
-- Ch.C: Cu CMP (Copper Interconnect / Platen 3 Buffing)
+Generates multi-day operational scenarios for Samsung Front-End Memory (DRAM/V-NAND) STI CMP Fab.
+Models 3 production polishing platens/stations:
+- Ch.A: STI Oxide Platen 1 (Bulk Polish / High Downforce)
+- Ch.B: STI Oxide Platen 2 (Fine Polish / EPD Endpoint Control)
+- Ch.C: STI Oxide Platen 3 (Buff Polish / Defect & Scratch Prevention)
 
 Simulates Virtual Metrology MRR predictions, Alarm Bifurcation,
 and exports complete bundle to data/scenarios.json and docs/data.js.
@@ -26,9 +26,9 @@ STEP_MIN = 6  # 6 minutes per wafer
 NUM_STEPS = 100  # 100 wafers per 10-hour shift (08:00 to 18:00)
 
 CHAMBER_CONFIG = [
-    {"id": "Ch.A", "name": "STI CMP (Platen 1)", "type": "STI Bulk", "target_mrr": 2200.0},
-    {"id": "Ch.B", "name": "W-Plug CMP (Platen 2)", "type": "W Fine", "target_mrr": 2150.0},
-    {"id": "Ch.C", "name": "Cu CMP (Platen 3)", "type": "Cu Buff", "target_mrr": 2180.0}
+    {"id": "Ch.A", "name": "STI 산화막 1차 벌크 (Platen 1)", "type": "Bulk Polish", "target_mrr": 2200.0},
+    {"id": "Ch.B", "name": "STI 산화막 2차 정밀 (Platen 2)", "type": "Fine Polish", "target_mrr": 2150.0},
+    {"id": "Ch.C", "name": "STI 산화막 3차 버핑 (Platen 3)", "type": "Buff Polish", "target_mrr": 2180.0}
 ]
 
 def make_time_series(start_hour=8, start_min=0, steps=NUM_STEPS):

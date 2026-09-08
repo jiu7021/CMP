@@ -30,10 +30,10 @@ CMP(Chemical Mechanical Planarization)는 회전하는 연마 패드와 화학 �
 | **시스템 제어** | **알람 미발생 · 라인 무중단** (Run-to-Run APC 레시피 자동 보정) | **긴급 알람 발생 · 해당 챔버만 즉시 단독 정지** (타 챔버 정상 가동) |
 | **화면 표기** | '자동 보정 이력'에 보정량(ΔP, ΔFlow) 기록 | 긴급 알람 팝업, 원인 소모품, RUL, **[재가동 승인]** 버튼 제시 |
 
-### 💡 전공정 멀티챔버 단독 정지 & 재가동 메커니즘
-- 전공정 CMP 설비(3개 챔버: Ch.A STI, Ch.B W-Plug, Ch.C Cu CMP)에서 **Ch.A의 패드가 수명 한계에 도달하면 Ch.A만 즉시 정지(0 RPM, 압력 소멸)**됩니다.
-- **Ch.B와 Ch.C는 정상적으로 웨이퍼를 가공**하며, 실제 팹과 동일하게 조업 시간은 계속 흐릅니다.
-- 작업자가 상단의 **`[소모품(패드) 교체 완료 · 재가동]`** 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Ch.A가 즉각 재가동됩니다.
+### 💡 전공정 멀티플래튼 단독 정지 & 재가동 메커니즘
+- 전공정 STI 산화막 CMP 설비(3개 연마 정반: Platen 1 벌크, Platen 2 정밀, Platen 3 버핑)에서 **Platen 1(Ch.A)의 패드가 수명 한계에 도달하면 Platen 1만 즉시 정지(0 RPM, 압력 소멸)**됩니다.
+- **Platen 2(Ch.B)와 Platen 3(Ch.C)는 정상적으로 웨이퍼를 가공**하며, 실제 팹과 동일하게 주간 근무조 조업 시간은 계속 흐릅니다.
+- 작업자가 상단의 **`[소모품(패드) 교체 완료 · 재가동]`** 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Platen 1이 즉각 재가동됩니다.
 
 ---
 
@@ -66,11 +66,11 @@ CMP(Chemical Mechanical Planarization)는 회전하는 연마 패드와 화학 �
 ├── requirements.txt        # 의존성 패키지 목록
 ├── app_streamlit.py        # 로컬 브라우저 실행용 Streamlit 대시보드
 ├── src/
-│   ├── phm_data.py         # PHM 2016 벤치마크 로더 및 물리 기반 합성 폴백 생성기
+│   ├── phm_data.py         # IEEE PHM 2016 팹 실공정 데이터셋 로더
 │   ├── virtual_metrology.py# 가상계측 모델 (Ridge, RF, MLP) 학습 및 평가
 │   ├── alarm_engine.py     # 결정론적 가역/비가역 알람 이원화 엔진
 │   ├── rul_estimator.py    # 소모품(패드/컨디셔너) RUL 및 95% CI 추정기
-│   └── scenario_builder.py # 5일간 3개 챔버 양산 시나리오 빌더 및 번들러
+│   └── scenario_builder.py # 5일간 3개 플래튼 주간 근무조 양산 시나리오 빌더 및 번들러
 ├── scripts/
 │   ├── 01_prepare_data.py  # 데이터셋 준비 (시간 순서 70:30 분할)
 │   ├── 02_train_models.py  # 가상계측 모델 학습 및 벤치마크

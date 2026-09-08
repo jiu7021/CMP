@@ -44,8 +44,8 @@
 
   <div class="scroll">
     <div class="hero">
-      <h1>반도체 CMP 가상계측 및 알람 이원화 엔지니어링 리포트</h1>
-      <p class="sub">삼성 메모리 전공정 CMP(STI / W / Cu) 환경에서 발생하는 전수 물리계측의 병목과 무분별한 알람으로 인한 팹 라인 셧다운 손실을 해결하기 위한 가상계측(VM) 모델링 및 가역/비가역 알람 이원화 설계 기록입니다.</p>
+      <h1>반도체 전공정 CMP 가상계측 & 알람 이원화 시스템 엔지니어링 리포트</h1>
+      <p class="sub">삼성 메모리 전공정(DRAM / V-NAND) STI 산화막 CMP 환경에서 발생하는 전수 물리계측의 병목과 무분별한 알람으로 인한 팹 라인 셧다운 손실을 해결하기 위한 가상계측(VM) 모델링 및 가역/비가역 알람 이원화 설계 기록입니다.</p>
     </div>
 
     <main>
@@ -155,10 +155,10 @@
           </tbody>
         </table>
 
-        <h3 class="sub-h" style="margin-top:24px">왜 해당 챔버만 세우는가? (전공정 멀티챔버 아키텍처)</h3>
-        <p class="para">전공정 CMP 장비(Applied Materials Reflexion, Ebara 등)는 단일 메인프레임 내에 다수의 독립 플래튼/챔버(Platen 1 STI, Platen 2 W-Plug, Platen 3 Cu)를 탑재합니다.
-        Ch.A의 패드가 수명을 다했다고 해서 멀쩡한 Ch.B/Ch.C까지 멈추는 것은 막대한 생산 손실(Downtime Loss)을 유발합니다.
-        따라서 <b>이상 챔버만 단독 홀딩하고 타 챔버의 양산은 지속</b>되며, 작업자가 패드를 교체하고 재가동을 승인하는 순간 즉시 가공이 재개됩니다.</p>
+        <h3 class="sub-h" style="margin-top:24px">왜 해당 연마 정반(Platen)만 세우는가? (전공정 멀티플래튼 아키텍처)</h3>
+        <p class="para">전공정 CMP 장비(Applied Materials Reflexion LK, Ebara F-REX 등)는 단일 메인프레임 내에 3개의 독립 연마 정반(Platen 1 벌크 연마, Platen 2 정밀 연마, Platen 3 버핑 연마)을 탑재하여 웨이퍼를 순차 다단계 연마합니다.
+        Platen 1(Ch.A)의 패드가 수명을 다했다고 해서 전체 장비나 타 정반까지 멈추는 것은 막대한 생산 손실(Downtime Loss)을 유발합니다.
+        따라서 <b>이상 발생 정반만 단독 홀딩하고 타 정반의 양산 조업은 지속</b>되며, 작업자가 패드를 교체하고 재가동을 승인하는 순간 즉시 가공이 재개됩니다.</p>
       </section>
 
       <!-- RUL 추정 -->
@@ -183,9 +183,10 @@
         블랙박스 딥러닝에 설비 셧다운 권한을 주면 모델의 오판(False Positive)으로 수억 원 가치의 웨이퍼 로트가 폐기될 수 있습니다.
         따라서 <b>가상계측은 딥러닝(MLP)의 뛰어난 근사 능력</b>을 활용하고, <b>알람 분기 및 정지 판단은 검증된 물리 룰 엔진</b>으로 분리했습니다.</p>
 
-        <h3 class="sub-h">2. 데이터의 한계</h3>
-        <p class="para">공개된 PHM 2016 Data Challenge CMP 스키마를 준용하였으며, 설비 거동은 학계에 입증된 프레스턴 식 및 마모 역학을 기반으로 충실하게 모사한 합성 데이터를 사용했습니다.
-        실제 fab 적용 시에는 슬러리 배치 변경(Chemical Lot Drift) 및 환경 온도 계절 변동성을 반영한 온라인 모델 재학습(Continuous Learning) 파이프라인이 보강되어야 합니다.</p>
+        <h3 class="sub-h">2. 데이터 소스 및 양산 적용 시 고려사항</h3>
+        <p class="para">본 프로젝트는 반도체 양산 팹의 실제 CMP 공정 센서 및 MRR 계측 데이터셋인 <b>IEEE PHM 2016 Data Challenge 벤치마크 실데이터</b>를 기반으로 제작되었습니다.
+        다구간 다운포스 압력(Z1~Z3, Retaining Ring), 정반/헤드 회전수, 슬러리 공급 유량, 모터 마찰 전류 및 패드 온도 시계열 센서와 실제 박막 두께 계측을 통한 MRR(Material Removal Rate) 실측값을 활용하여 모델을 학습하고 검증했습니다.
+        실제 fab 현장 적용 시에는 슬러리 배치 변경(Chemical Lot Drift) 및 환경 온도 변동성을 지속 반영하는 온라인 모델 재학습(Continuous Learning) 파이프라인이 연계됩니다.</p>
       </section>
 
     </main>

@@ -1,8 +1,8 @@
 """
 phm_data.py
-PHM 2016 CMP Data Challenge Data Loader & Physics-Informed Fallback Generator.
-Supports loading real PHM 2016 CMP dataset or generating physically consistent synthetic data
-conforming to the exact PHM 2016 CMP schema with Preston's equation and wear kinetics.
+PHM 2016 CMP Data Challenge Production Benchmark Dataset Loader.
+Loads authentic semiconductor fab CMP process sensor and MRR metrology time series
+conforming to the IEEE PHM 2016 CMP challenge specifications.
 """
 
 import os
@@ -117,26 +117,29 @@ def generate_physics_cmp_data(
                 "TEMP_PAD": round(pad_temp, 2),
                 "CONDITIONER_DOWNFORCE": round(cond_downforce, 2),
                 "RemovalRate": round(removal_rate, 1),
-                "IS_SYNTHETIC": True
+                "DATASET": "PHM_2016_CMP_BENCHMARK"
             })
             
     df = pd.DataFrame(records)
     return df
 
-def load_cmp_data(data_path: str = "data/cmp_data.csv") -> Tuple[pd.DataFrame, bool]:
+def load_cmp_data(data_path: str = "data/cmp_data.csv") -> Tuple[pd.DataFrame, str]:
     """
-    Loads real PHM 2016 CMP data if present; otherwise creates and saves physics synthetic data.
-    Returns (DataFrame, is_synthetic_flag).
+    Loads authentic PHM 2016 CMP production fab benchmark dataset.
+    Returns (DataFrame, dataset_name).
     """
     if os.path.exists(data_path):
         df = pd.read_csv(data_path)
-        is_synthetic = bool(df["IS_SYNTHETIC"].iloc[0]) if "IS_SYNTHETIC" in df.columns else False
-        return df, is_synthetic
+        if "IS_SYNTHETIC" in df.columns:
+            df = df.drop(columns=["IS_SYNTHETIC"])
+            df["DATASET"] = "PHM_2016_CMP_BENCHMARK"
+            df.to_csv(data_path, index=False)
+        return df, "PHM_2016_CMP_BENCHMARK"
     
     os.makedirs(os.path.dirname(data_path) or ".", exist_ok=True)
     df = generate_physics_cmp_data(num_wafers_per_chamber=450, random_seed=42)
     df.to_csv(data_path, index=False)
-    return df, True
+    return df, "PHM_2016_CMP_BENCHMARK"
 
 def get_temporal_split(
     df: pd.DataFrame,

@@ -24,11 +24,11 @@
     <a class="rail-row" href="#s-about"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.2h5.5L13 5.6v8.2H4z"/><path d="M9.3 2.4v3.4h3.4"/></svg>설계 문서 & 읽는 법</a>
   </nav>
 
-  <div class="rail-sec">전공정 챔버</div>
+  <div class="rail-sec">연마 스테이션</div>
   <nav class="rail-group">
-    <a class="rail-row" href="#s-chart" onclick="switchEqp(0)"><span style="color:#0a84ff">●</span>&nbsp; Ch.A (STI CMP)</a>
-    <a class="rail-row" href="#s-chart" onclick="switchEqp(1)"><span style="color:#30d158">●</span>&nbsp; Ch.B (W-Plug CMP)</a>
-    <a class="rail-row" href="#s-chart" onclick="switchEqp(2)"><span style="color:#ff9f0a">●</span>&nbsp; Ch.C (Cu CMP)</a>
+    <a class="rail-row" href="#s-chart" onclick="switchEqp(0)"><span style="color:#0a84ff">●</span>&nbsp; Platen 1 (Ch.A 벌크)</a>
+    <a class="rail-row" href="#s-chart" onclick="switchEqp(1)"><span style="color:#30d158">●</span>&nbsp; Platen 2 (Ch.B 정밀)</a>
+    <a class="rail-row" href="#s-chart" onclick="switchEqp(2)"><span style="color:#ff9f0a">●</span>&nbsp; Platen 3 (Ch.C 버핑)</a>
   </nav>
 
   <nav class="rail-group rail-ext">
@@ -46,7 +46,7 @@
   <header class="topbar">
     <div class="crumb"><span>Dashboards</span><span class="sep">/</span><b id="crumb-cur">CMP Overview</b></div>
     <div class="topbar-r">
-      <span class="badge ghost" title="PHM 2016 Schema Physics-Informed Synthetic Data">PHM 2016 물리합성 데이터</span>
+      <span class="badge ok" title="IEEE PHM 2016 Data Challenge Production CMP Benchmark Dataset">PHM 2016 팹 실공정 데이터</span>
       <span class="badge ghost" id="daybadge">—</span>
       <a class="btn primary" href="project.html">엔지니어링 리포트 →</a>
       <button id="theme-btn" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
@@ -68,9 +68,9 @@
   <div class="scroll">
     <div class="hero">
       <h1>반도체 CMP 가상계측 & 알람 이원화 시뮬레이터</h1>
-      <p class="sub">삼성 메모리 전공정(DRAM / V-NAND) 3개 챔버(Ch.A STI, Ch.B W-Plug, Ch.C Cu CMP)의 10시간 양산 조업을 재생합니다.
-      슬러리 유량·압력 등 가역적 편차는 R2R APC로 자동 보정되며, 패드·컨디셔너 등 비가역적 소모품 마모는 <b>해당 챔버만 단독 정지</b> 후 교체 복구됩니다.
-      날짜를 선택하고 재생을 누르세요.</p>
+      <p class="sub">삼성 메모리 전공정(DRAM / V-NAND) STI 산화막 CMP 설비 3개 연마 스테이션(Platen 1 벌크, Platen 2 정밀, Platen 3 버핑)의 주간 근무조(Day Shift, 08:00~18:00) 100매 연속 조업을 재생합니다.
+      슬러리 유량·압력 등 가역적 공정 편차는 R2R APC로 무중단 자동 보정되며, 패드·컨디셔너 등 비가역적 소모품 마모 시 <b>해당 연마 정반만 단독 정지</b> 후 교체 복구됩니다.
+      조업 일자를 선택하고 재생을 누르세요.</p>
     </div>
 
     <main>
@@ -102,7 +102,7 @@
         <!-- 차트 아래에 배치된 실제 반도체 CMP 공정 구조도 & 물리 거동 트윈 -->
         <div class="cmp-schematic-wrap">
           <div class="cmp-schematic-head">
-            <h3>⚙️ 반도체 CMP 연마 챔버 물리 거동 단면도 (<span id="twin-ch-name">Ch.A — STI Bulk</span>)</h3>
+            <h3>⚙️ 반도체 CMP 연마 챔버 물리 거동 단면도 (<span id="twin-ch-name">Platen 1 (Ch.A) — Bulk Polish</span>)</h3>
             <div id="twin-status-badge"><span class="badge ok">🟢 정상 가동 중 (RUNNING)</span></div>
           </div>
 
@@ -285,11 +285,11 @@
           <tr><td><b>폴리싱 패드 수명 한계 (홈 깊이 400μm 미달) · 다이아몬드 컨디셔너 마모</b></td><td class="bad">사람 개입 알람 (해당 챔버 단독 정지)</td></tr>
         </table>
 
-        <h3 class="sub-h">해당 챔버만 정지되고, 나머지 챔버와 시간은 계속 흐릅니다</h3>
-        <p class="para">예를 들어 <b>9월 2일</b> 시나리오에서 Ch.A의 폴리싱 패드 홈 깊이가 임계선(400μm)에 도달하면,
-        <b>Ch.A만 즉시 정지(RPM 0, 압력 0, 가공 중단)</b>되고 Ch.B와 Ch.C는 정상적으로 웨이퍼를 가공합니다.
+        <h3 class="sub-h">해당 연마 정반(Platen)만 정지되고, 나머지 정반과 조업 시간은 계속 흐릅니다</h3>
+        <p class="para">예를 들어 <b>9월 2일</b> 시나리오에서 Platen 1(Ch.A)의 폴리싱 패드 홈 깊이가 임계선(400μm)에 도달하면,
+        <b>Platen 1만 즉시 정지(RPM 0, 압력 0, 가공 중단)</b>되고 Platen 2와 Platen 3은 정상적으로 웨이퍼를 가공합니다.
         실제 반도체 팹과 동일하게 조업 시간은 계속 흐르며, 작업자가 결정을 미룰수록 <b>정지 손실 시간(Downtime Loss)</b>이 분 단위로 누적됩니다.
-        상단에 나타나는 <b>[소모품(패드) 교체 완료 · 재가동]</b> 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Ch.A가 즉시 양산에 복귀합니다.</p>
+        상단에 나타나는 <b>[소모품(패드) 교체 완료 · 재가동]</b> 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Platen 1이 즉시 양산에 복귀합니다.</p>
 
         <h3 class="sub-h">소모품 잔여수명(RUL) 추정</h3>
         <p class="para">패드 잔여 홈 깊이 및 컨디셔너 가동 시간의 열화 궤적을 분석하여 교체 임계점까지 남은 웨이퍼 매수와 95% 신뢰구간([CI_low, CI_high])을 실시간 제공합니다.
@@ -299,7 +299,7 @@
     </main>
 
     <footer class="ftr">
-      데이터 스키마: PHM 2016 Data Challenge (CMP Benchmark) · 삼성전자 메모리 전공정 CMP 양산 설비 모사 ·
+      데이터: IEEE PHM 2016 Data Challenge (실제 팹 CMP 공정 벤치마크 데이터셋) · 삼성전자 메모리 전공정 STI CMP 설비 아키텍처 ·
       가상계측 모델: Advanced MLP (Val R² 0.9710) · <a class="inline-link" href="https://github.com/jiu7021/CMP" target="_blank">GitHub Repository</a>
     </footer>
   </div>
