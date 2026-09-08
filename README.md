@@ -1,7 +1,7 @@
 # 반도체 CMP 가상계측 및 알람 이원화 시뮬레이터
 ### Semiconductor Front-End CMP Virtual Metrology & Alarm Bifurcation Simulator
 
-삼성전자 메모리(DRAM / V-NAND) 전공정 CMP(STI / W-Plug / Cu) 환경을 모사한 **가상계측(Virtual Metrology)** 및 **가역/비가역 알람 이원화(Alarm Bifurcation)** 시뮬레이터입니다.
+CMP(Chemical Mechanical Planarization) 공정 센서 데이터를 기반으로 한 **가상계측(Virtual Metrology)** 및 **가역/비가역 알람 이원화(Alarm Bifurcation)** 시뮬레이터입니다.
 
 - **🌐 라이브 시뮬레이터**: [https://jiu7021.github.io/CMP/](https://jiu7021.github.io/CMP/)
 - **📑 엔지니어링 리포트**: [https://jiu7021.github.io/CMP/project.html](https://jiu7021.github.io/CMP/project.html)
@@ -21,7 +21,7 @@ CMP(Chemical Mechanical Planarization)는 회전하는 연마 패드와 화학 �
 
 ## 2. 핵심 설계: 알람 이원화 (Alarm Bifurcation)
 
-이상(Anomaly)의 물리적 성격을 **"가역적(파라미터 보정 가능)"**과 **"비가역적(소모품 마모)"**으로 엄격히 분기합니다.
+이상의 물리적 성격을 **"가역적(파라미터 보정 가능)"**과 **"비가역적(소모품 마모)"**으로 엄격히 분기합니다.
 
 | 구분 | 가역적 이상 (A. 자동 보정 경로) | 비가역적 이상 (B. 사람 개입 경로) |
 |---|---|---|
@@ -30,10 +30,10 @@ CMP(Chemical Mechanical Planarization)는 회전하는 연마 패드와 화학 �
 | **시스템 제어** | **알람 미발생 · 라인 무중단** (Run-to-Run APC 레시피 자동 보정) | **긴급 알람 발생 · 해당 챔버만 즉시 단독 정지** (타 챔버 정상 가동) |
 | **화면 표기** | '자동 보정 이력'에 보정량(ΔP, ΔFlow) 기록 | 긴급 알람 팝업, 원인 소모품, RUL, **[재가동 승인]** 버튼 제시 |
 
-### 💡 전공정 멀티플래튼 단독 정지 & 재가동 메커니즘
-- 전공정 STI 산화막 CMP 설비(3개 연마 정반: Platen 1 벌크, Platen 2 정밀, Platen 3 버핑)에서 **Platen 1(Ch.A)의 패드가 수명 한계에 도달하면 Platen 1만 즉시 정지(0 RPM, 압력 소멸)**됩니다.
-- **Platen 2(Ch.B)와 Platen 3(Ch.C)는 정상적으로 웨이퍼를 가공**하며, 실제 팹과 동일하게 주간 근무조 조업 시간은 계속 흐릅니다.
-- 작업자가 상단의 **`[소모품(패드) 교체 완료 · 재가동]`** 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Platen 1이 즉각 재가동됩니다.
+### 💡 멀티챔버 단독 정지 & 재가동 메커니즘
+- 3개 챔버(Ch.A, Ch.B, Ch.C) 중 **Ch.A의 패드가 수명 한계에 도달하면 Ch.A만 즉시 정지(0 RPM, 압력 소멸)**됩니다.
+- **Ch.B와 Ch.C는 정상적으로 웨이퍼를 가공**하며, 실제 팹과 동일하게 조업 시간은 계속 흐릅니다.
+- 작업자가 상단의 **`[소모품(패드) 교체 완료 · 재가동]`** 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Ch.A가 즉각 재가동됩니다.
 
 ---
 

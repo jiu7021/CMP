@@ -61,10 +61,12 @@
   --ok:rgb(48,209,88);    --ok-fill:rgba(48,209,88,.14);
 }
 
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100%}
+*{box-sizing:border-box;word-break:keep-all;overflow-wrap:break-word}
+html,body{margin:0;padding:0;height:100%;word-break:keep-all;overflow-wrap:break-word}
 body{background:var(--surface-app);color:var(--ink);font-family:var(--font-sans);
-  font-size:14px;line-height:20px;letter-spacing:0;-webkit-font-smoothing:antialiased}
+  font-size:14px;line-height:20px;letter-spacing:0;-webkit-font-smoothing:antialiased;
+  word-break:keep-all;overflow-wrap:break-word}
+h1,h2,h3,h4,h5,h6,p,span,b,em,td,th{word-break:keep-all;overflow-wrap:break-word}
 h1,h2,h3{margin:0;font-weight:600}
 b{font-weight:600;color:var(--ink)}
 .tnum,.kpi-val,.kv,.cmp,.badge{font-variant-numeric:tabular-nums}

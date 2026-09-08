@@ -45,7 +45,7 @@
   <div class="scroll">
     <div class="hero">
       <h1>반도체 전공정 CMP 가상계측 & 알람 이원화 시스템 엔지니어링 리포트</h1>
-      <p class="sub">삼성 메모리 전공정(DRAM / V-NAND) STI 산화막 CMP 환경에서 발생하는 전수 물리계측의 병목과 무분별한 알람으로 인한 팹 라인 셧다운 손실을 해결하기 위한 가상계측(VM) 모델링 및 가역/비가역 알람 이원화 설계 기록입니다.</p>
+      <p class="sub">반도체 CMP 공정 데이터(IEEE PHM 2016 Data Challenge)를 기반으로 전수 물리계측의 병목을 해소하기 위한 머신러닝 가상계측(VM) 모델링과 불필요한 라인 셧다운을 방지하는 가역/비가역 알람 이원화 시스템 설계 기록입니다.</p>
     </div>
 
     <main>
@@ -58,76 +58,61 @@
         공정의 제1 품질 지표는 <b>MRR(Material Removal Rate, 단위 시간당 제거 두께, Å/min)</b>이며,
         MRR이 목표치를 벗어나면 웨이퍼 내/웨이퍼 간 두께 산포(WIWNU / WTWNU)가 악화되어 후속 노광(Lithography) 초점 심도 불량 및 전체 수율 저하를 유발합니다.</p>
 
-        <h3 class="sub-h">현장의 두 가지 치명적 병목</h3>
-        <p class="para"><b>첫째, 전수 계측의 불가능성:</b> 초정밀 광학 박막 두께 측정기로 매 웨이퍼마다 MRR을 전수 실측하려면 막대한 장비 투자와 측정 대기 시간(Queue Time)이 발생해 팹 병목이 됩니다. 따라서 <b>장비 센서 데이터만으로 MRR을 실시간 예측하는 가상계측(Virtual Metrology)</b>이 필수적입니다.</p>
-        <p class="para"><b>둘째, 알람 피로도와 불필요한 라인 정지:</b> 실제 CMP 설비에는 수십 개의 센서가 장착되어 있으나, 기존 FDC(Fault Detection and Classification) 시스템은 단순 단일 임계값(±3σ) 방식으로 경보를 울립니다.
-        결과적으로 슬러리 유량의 일시적 흔들림이나 제어 가능한 압력 세팅 편차에도 설비가 정지되어 생산성이 급락합니다.</p>
+        <h3 class="sub-h">현장 병목과 알람 문제</h3>
+        <p class="para">1. <b>전수 물리 계측의 불가능성</b>: 매 웨이퍼마다 박막 두께 측정기로 실측하면 팹 라인 정체가 발생하므로, 설비 센서 시계열로 MRR을 예측하는 <b>가상계측(VM)</b>이 필수적입니다.<br>
+        2. <b>무분별한 알람과 불필요한 라인 정지</b>: 기존 FDC의 단순 임계치 방식은 가역적인 유량·압력 편차에도 일괄 경보를 발생시켜 극심한 오퍼레이터 피로와 라인 셧다운 손실을 유발합니다.</p>
       </section>
 
-      <!-- 가상계측 벤치마크 -->
-      <section class="panel" id="p-vm">
-        <div class="panel-head"><h2>2. 가상계측(Virtual Metrology) 모델 벤치마크</h2><div class="hint">엄격한 시간 순서 검증(70:30 Split, Data Leakage Zero)</div></div>
+      <!-- 모델 성능 비교 -->
+      <section class="panel" id="p-models">
+        <div class="panel-head"><h2>2. 가상계측 모델 벤치마크 결과</h2></div>
+        <p class="para">프레스턴 식($MRR = k_p \cdot P \cdot V$) 및 아레니우스 화학 반응식을 반영한 물리 파생변수를 주입하고, 시간 순서 70:30 분할(Data Leakage Zero) 검증셋에서 모델을 평가했습니다.</p>
 
-        <p class="para">CMP 공정의 역학적 원리인 <b>프레스턴 식(Preston's Equation: MRR = kp · P · V)</b>과 화학적 아레니우스 항을 바탕으로 물리 도메인 파생변수를 설계하고,
-        선형 회귀, 앙상블, 다층 신경망(MLP) 모델을 동일 검증셋(Val 405매)에서 비교 평가했습니다.</p>
-
-        <table class="tb" style="margin-top:16px">
+        <table class="tbl" style="margin-top:14px">
           <thead>
             <tr>
               <th>모델 아키텍처</th>
-              <th>학습 RMSE</th>
               <th>검증 RMSE (Å/min)</th>
               <th>검증 MAE (Å/min)</th>
-              <th>검증 R² 결정계수</th>
+              <th>결정계수 (R²)</th>
               <th>특징 및 판정</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><b>Baseline Ridge (L2 규제 선형)</b></td>
-              <td>94.12</td>
               <td>96.49</td>
               <td>91.52</td>
               <td>0.9607</td>
-              <td>선형 프레스턴 근사 우수하나 비선형 마모 상호작용 한계</td>
+              <td>프레스턴 1차 선형 거동은 양호하나 비선형 마모 한계</td>
             </tr>
             <tr>
               <td><b>Baseline Random Forest (100 Trees)</b></td>
-              <td>42.15</td>
               <td>129.10</td>
               <td>111.80</td>
               <td>0.9297</td>
-              <td>학습셋 과적합 발생, 시간축 외삽(Extrapolation) 성능 저하</td>
+              <td>시간축 외삽(Extrapolation) 일반화 성능 저하</td>
             </tr>
-            <tr style="background:rgba(10,132,255,0.08)">
-              <td><b>Advanced MLP (64-32 ReLU) ★ 선정</b></td>
-              <td>79.30</td>
+            <tr style="background:rgba(48,209,88,0.08)">
+              <td><b>Advanced MLP (64-32 ReLU) ★</b></td>
               <td><b>82.94</b></td>
               <td><b>67.01</b></td>
               <td><b>0.9710</b></td>
-              <td><b>압력×속도×마모 다변량 결합 관계를 가장 정확히 추정</b></td>
+              <td>다변량 결합 관계 최고 정밀도 달성 (최종 모델 채택)</td>
             </tr>
           </tbody>
         </table>
-
-        <div class="brief-box" style="margin-top:20px">
-          <span class="tag">실측 결과 검증</span>
-          <p>임의로 수치를 지어내지 않고, <code>src/virtual_metrology.py</code> 실제 실행 결과(Val 405건)를 기록했습니다.
-          도메인 지식을 반영한 물리 파생변수(P_avg, V_rel, Friction Power)를 주입했을 때 MLP 모델이 검증 R² 0.9710, MAE 67.01 Å/min의 고정밀 예측 성능을 달성했습니다.</p>
-        </div>
       </section>
 
       <!-- 알람 이원화 로직 -->
-      <section class="panel" id="p-logic">
-        <div class="panel-head"><h2>3. 알람 이원화 및 단독 설비 정지 분기 설계</h2></div>
+      <section class="panel" id="p-bifurcation">
+        <div class="panel-head"><h2>3. 결정론적 알람 이원화 엔진 (Alarm Bifurcation)</h2></div>
+        <p class="para">공정 이상의 물리적 성격을 판별하여 <b>'가역적 이상(APC 자동 보정)'</b>과 <b>'비가역적 이상(사람 개입/설비 정지)'</b>으로 엄격히 분기합니다.</p>
 
-        <p class="para">본 프로젝트의 핵심 기여는 <b>"이상의 성격이 가역적(파라미터 조정 복구 가능)인가, 비가역적(소모품 물리 마모)인가"</b>를 명시적으로 판별하여 제어 경로를 이원화한 것입니다.</p>
-
-        <table class="tb" style="margin-top:16px">
+        <table class="tbl" style="margin-top:14px">
           <thead>
             <tr>
               <th>구분</th>
-              <th>가역적 이상 경로 (A)</th>
               <th>비가역적 이상 경로 (B)</th>
             </tr>
           </thead>
@@ -155,10 +140,10 @@
           </tbody>
         </table>
 
-        <h3 class="sub-h" style="margin-top:24px">왜 해당 연마 정반(Platen)만 세우는가? (전공정 멀티플래튼 아키텍처)</h3>
-        <p class="para">전공정 CMP 장비(Applied Materials Reflexion LK, Ebara F-REX 등)는 단일 메인프레임 내에 3개의 독립 연마 정반(Platen 1 벌크 연마, Platen 2 정밀 연마, Platen 3 버핑 연마)을 탑재하여 웨이퍼를 순차 다단계 연마합니다.
-        Platen 1(Ch.A)의 패드가 수명을 다했다고 해서 전체 장비나 타 정반까지 멈추는 것은 막대한 생산 손실(Downtime Loss)을 유발합니다.
-        따라서 <b>이상 발생 정반만 단독 홀딩하고 타 정반의 양산 조업은 지속</b>되며, 작업자가 패드를 교체하고 재가동을 승인하는 순간 즉시 가공이 재개됩니다.</p>
+        <h3 class="sub-h" style="margin-top:24px">왜 해당 챔버만 세우는가? (멀티챔버 독립 정지 구조)</h3>
+        <p class="para">실제 반도체 CMP 설비는 다수의 독립 챔버(Chamber 1, 2, 3)를 운영합니다.
+        Ch.A(Chamber 1)의 패드가 수명을 다했다고 해서 정상 가동 중인 타 챔버까지 멈추는 것은 막대한 생산 손실(Downtime Loss)을 유발합니다.
+        따라서 <b>이상 발생 챔버만 단독 홀딩하고 타 챔버의 가공 조업은 지속</b>되며, 작업자가 패드를 교체하고 재가동을 승인하는 순간 즉시 가공이 재개됩니다.</p>
       </section>
 
       <!-- RUL 추정 -->

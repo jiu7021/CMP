@@ -12,6 +12,12 @@
   --mrr-pred: rgb(100, 210, 255);
 }
 
+/* ── 한국어 단어 줄바꿈 유지 ('있잔\n아' 같은 글자 잘림 방지) ──── */
+html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kpi, table, td, th {
+  word-break: keep-all !important;
+  overflow-wrap: break-word !important;
+}
+
 /* ── Top Bar & Playback Controls ─────────────────── */
 .barwrap {
   flex: none;

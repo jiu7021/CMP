@@ -28,7 +28,7 @@ with open(data_path, "r", encoding="utf-8") as f:
 
 # Sidebar
 st.sidebar.title("⚙️ CMP 가상계측 & 알람 이원화")
-st.sidebar.caption("삼성전자 메모리 전공정(STI/W/Cu) 3-Chamber Fab 시뮬레이터")
+st.sidebar.caption("반도체 CMP 공정 3-Chamber 가상계측 & 알람 시뮬레이터")
 
 day_options = [f"{d['date']} : {d['title']}" for d in scenarios]
 selected_day_str = st.sidebar.selectbox("📅 시나리오 일자 선택", day_options, index=1)
