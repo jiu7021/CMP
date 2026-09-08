@@ -17,6 +17,10 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   word-break: keep-all !important;
   overflow-wrap: break-word !important;
 }
+.sub, .para, .hint, .brief-box p, .panel p {
+  max-width: none !important;
+  width: 100% !important;
+}
 
 /* ── Top Bar & Playback Controls ─────────────────── */
 .barwrap {
@@ -38,38 +42,52 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
 }
 
 .play {
-  background: #ffffff;
-  color: #121214;
+  background: #0a84ff;
+  color: #ffffff;
   border: none;
-  padding: 9px 18px;
-  border-radius: var(--radius-8);
+  padding: 9px 20px;
+  border-radius: 10px;
   cursor: pointer;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   transition: all var(--dur-fast) var(--ease);
+  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
-.play:hover { opacity: 0.88; transform: translateY(-1px); }
+.play:hover {
+  background: #0077ed;
+  box-shadow: 0 4px 16px rgba(10, 132, 255, 0.5);
+  transform: translateY(-1px);
+}
 .play.on {
-  background: var(--warn);
-  color: rgb(24, 24, 26);
+  background: #ff9f0a;
+  color: #121214;
+  box-shadow: 0 2px 10px rgba(255, 159, 10, 0.4);
 }
 
 .mini {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink-40);
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-8);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all var(--dur-fast) var(--ease);
 }
 .mini:hover {
-  color: var(--ink);
-  border-color: var(--ink-20);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .clock {
@@ -97,85 +115,124 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
 .track {
   flex: 1;
   min-width: 120px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 7px;
+  background: rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-full);
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .track i {
   display: block;
   height: 100%;
   width: 0;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, #0a84ff, #30d158);
+  background: linear-gradient(90deg, #0a84ff 0%, #30d158 100%);
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.5);
   transition: width 0.12s linear;
 }
 
-.spd { display: flex; gap: 4px; }
+.spd {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
 .spd button {
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink-80);
-  padding: 6px 11px;
-  border-radius: var(--radius-8);
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 5px 10px;
+  border-radius: 6px;
   cursor: pointer;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
+  font-weight: 600;
   transition: all var(--dur-fast) var(--ease);
 }
-.spd button:hover { color: var(--ink); }
+.spd button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
 .spd button.on {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* ── Day / Scenario Selector ─────────────────────── */
+/* ── Day / Scenario Selector (사진 보낸 애들 디자인 개편) ─── */
 .daybar {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 28px 12px;
+  padding: 0 28px 14px;
   scrollbar-width: none;
 }
 .daybar::-webkit-scrollbar { display: none; }
 .daybar button {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 170px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid var(--line);
-  color: var(--ink-80);
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
   padding: 10px 15px;
-  border-radius: var(--radius-8);
+  border-radius: 12px;
   cursor: pointer;
   font: inherit;
   text-align: left;
-  transition: all var(--dur-fast) var(--ease);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
-.daybar button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
-.daybar button.on, .daybar button.on b, .daybar button.on span {
-  color: #121214;
+.daybar button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 .daybar button.on {
-  background: #ffffff;
-  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.13) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  color: #ffffff !important;
 }
-.daybar button.on span { opacity: 0.82; }
 .daybar button b {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   line-height: 18px;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.daybar button.on b {
+  color: #ffffff !important;
+}
+.daybar button.on b::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0a84ff;
+  box-shadow: 0 0 8px rgba(10, 132, 255, 0.9);
 }
 .daybar button span {
-  font-size: 11px;
-  opacity: 0.72;
-  line-height: 15px;
+  font-size: 11.5px;
+  opacity: 0.75;
+  line-height: 16px;
+  color: rgba(255, 255, 255, 0.65);
   white-space: nowrap;
+}
+.daybar button.on span {
+  opacity: 0.95;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* ── KPI Cards (Figma / ByeWind Style) ────────────── */
