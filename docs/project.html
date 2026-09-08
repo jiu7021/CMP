@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프로젝트 기록 — 반도체 CMP 가상계측 및 알람 이원화</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="snowui-shell.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+
+<aside class="rail">
+  <div class="rail-brand"><span class="rail-dot"></span><span>CMP 가상계측</span></div>
+
+  <div class="rail-sec">목차</div>
+  <nav class="rail-group">
+    <a class="rail-row" href="#p-bg"><svg class="ri" viewBox="0 0 16 16"><path d="M2 3h12v10H2z"/></svg>배경 및 문제</a>
+    <a class="rail-row" href="#p-vm"><svg class="ri" viewBox="0 0 16 16"><path d="M3 13V3h10v10z"/></svg>가상계측 벤치마크</a>
+    <a class="rail-row" href="#p-logic"><svg class="ri" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></svg>알람 이원화 로직</a>
+    <a class="rail-row" href="#p-rul"><svg class="ri" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>소모품 잔여수명 (RUL)</a>
+    <a class="rail-row" href="#p-limits"><svg class="ri" viewBox="0 0 16 16"><path d="M12 2L4 14"/></svg>한계와 운영 인사이트</a>
+  </nav>
+
+  <nav class="rail-group rail-ext">
+    <a class="rail-row" href="./">시뮬레이터로 복귀 ↗</a>
+    <a class="rail-row" href="https://github.com/jiu7021/CMP" target="_blank">저장소 ↗</a>
+  </nav>
+
+  <div class="rail-foot">SnowUI Design System</div>
+</aside>
+
+<div class="col">
+  <header class="topbar">
+    <div class="crumb"><span>프로젝트 기록</span><span class="sep">/</span><b id="crumb-cur">엔지니어링 리포트</b></div>
+    <div class="topbar-r">
+      <a class="btn primary" href="./">← 시뮬레이터 실행</a>
+      <button id="theme-btn" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
+    </div>
+  </header>
+
+  <div class="scroll">
+    <div class="hero">
+      <h1>반도체 CMP 가상계측 및 알람 이원화 엔지니어링 리포트</h1>
+      <p class="sub">삼성 메모리 전공정 CMP(STI / W / Cu) 환경에서 발생하는 전수 물리계측의 병목과 무분별한 알람으로 인한 팹 라인 셧다운 손실을 해결하기 위한 가상계측(VM) 모델링 및 가역/비가역 알람 이원화 설계 기록입니다.</p>
+    </div>
+
+    <main>
+
+      <!-- 배경 및 문제 -->
+      <section class="panel" id="p-bg">
+        <div class="panel-head"><h2>1. 배경 및 현장 문제 정의</h2></div>
+        <h3 class="sub-h">CMP 공정의 특성과 MRR</h3>
+        <p class="para">CMP(Chemical Mechanical Planarization)는 반도체 8대 전공정 중 표면 단차를 화학적 식각과 기계적 마모로 평탄화하는 핵심 공정입니다.
+        공정의 제1 품질 지표는 <b>MRR(Material Removal Rate, 단위 시간당 제거 두께, Å/min)</b>이며,
+        MRR이 목표치를 벗어나면 웨이퍼 내/웨이퍼 간 두께 산포(WIWNU / WTWNU)가 악화되어 후속 노광(Lithography) 초점 심도 불량 및 전체 수율 저하를 유발합니다.</p>
+
+        <h3 class="sub-h">현장의 두 가지 치명적 병목</h3>
+        <p class="para"><b>첫째, 전수 계측의 불가능성:</b> 초정밀 광학 박막 두께 측정기로 매 웨이퍼마다 MRR을 전수 실측하려면 막대한 장비 투자와 측정 대기 시간(Queue Time)이 발생해 팹 병목이 됩니다. 따라서 <b>장비 센서 데이터만으로 MRR을 실시간 예측하는 가상계측(Virtual Metrology)</b>이 필수적입니다.</p>
+        <p class="para"><b>둘째, 알람 피로도와 불필요한 라인 정지:</b> 실제 CMP 설비에는 수십 개의 센서가 장착되어 있으나, 기존 FDC(Fault Detection and Classification) 시스템은 단순 단일 임계값(±3σ) 방식으로 경보를 울립니다.
+        결과적으로 슬러리 유량의 일시적 흔들림이나 제어 가능한 압력 세팅 편차에도 설비가 정지되어 생산성이 급락합니다.</p>
+      </section>
+
+      <!-- 가상계측 벤치마크 -->
+      <section class="panel" id="p-vm">
+        <div class="panel-head"><h2>2. 가상계측(Virtual Metrology) 모델 벤치마크</h2><div class="hint">엄격한 시간 순서 검증(70:30 Split, Data Leakage Zero)</div></div>
+
+        <p class="para">CMP 공정의 역학적 원리인 <b>프레스턴 식(Preston's Equation: MRR = kp · P · V)</b>과 화학적 아레니우스 항을 바탕으로 물리 도메인 파생변수를 설계하고,
+        선형 회귀, 앙상블, 다층 신경망(MLP) 모델을 동일 검증셋(Val 405매)에서 비교 평가했습니다.</p>
+
+        <table class="tb" style="margin-top:16px">
+          <thead>
+            <tr>
+              <th>모델 아키텍처</th>
+              <th>학습 RMSE</th>
+              <th>검증 RMSE (Å/min)</th>
+              <th>검증 MAE (Å/min)</th>
+              <th>검증 R² 결정계수</th>
+              <th>특징 및 판정</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Baseline Ridge (L2 규제 선형)</b></td>
+              <td>94.12</td>
+              <td>96.49</td>
+              <td>91.52</td>
+              <td>0.9607</td>
+              <td>선형 프레스턴 근사 우수하나 비선형 마모 상호작용 한계</td>
+            </tr>
+            <tr>
+              <td><b>Baseline Random Forest (100 Trees)</b></td>
+              <td>42.15</td>
+              <td>129.10</td>
+              <td>111.80</td>
+              <td>0.9297</td>
+              <td>학습셋 과적합 발생, 시간축 외삽(Extrapolation) 성능 저하</td>
+            </tr>
+            <tr style="background:rgba(10,132,255,0.08)">
+              <td><b>Advanced MLP (64-32 ReLU) ★ 선정</b></td>
+              <td>79.30</td>
+              <td><b>82.94</b></td>
+              <td><b>67.01</b></td>
+              <td><b>0.9710</b></td>
+              <td><b>압력×속도×마모 다변량 결합 관계를 가장 정확히 추정</b></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="brief-box" style="margin-top:20px">
+          <span class="tag">실측 결과 검증</span>
+          <p>임의로 수치를 지어내지 않고, <code>src/virtual_metrology.py</code> 실제 실행 결과(Val 405건)를 기록했습니다.
+          도메인 지식을 반영한 물리 파생변수(P_avg, V_rel, Friction Power)를 주입했을 때 MLP 모델이 검증 R² 0.9710, MAE 67.01 Å/min의 고정밀 예측 성능을 달성했습니다.</p>
+        </div>
+      </section>
+
+      <!-- 알람 이원화 로직 -->
+      <section class="panel" id="p-logic">
+        <div class="panel-head"><h2>3. 알람 이원화 및 단독 설비 정지 분기 설계</h2></div>
+
+        <p class="para">본 프로젝트의 핵심 기여는 <b>"이상의 성격이 가역적(파라미터 조정 복구 가능)인가, 비가역적(소모품 물리 마모)인가"</b>를 명시적으로 판별하여 제어 경로를 이원화한 것입니다.</p>
+
+        <table class="tb" style="margin-top:16px">
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>가역적 이상 경로 (A)</th>
+              <th>비가역적 이상 경로 (B)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>대표 대상</b></td>
+              <td>슬러리 공급 유량 편차, 다운포스 압력 드리프트, 모터 RPM 편차</td>
+              <td>폴리싱 패드 수명 한계(홈 소진), 컨디셔너 마모, 리테이닝 링 파손</td>
+            </tr>
+            <tr>
+              <td><b>물리적 판별 근거</b></td>
+              <td>레시피 밸브/모터 제어(R2R APC)로 즉시 복귀 가능한 단발성/오프셋 이상</td>
+              <td>단조 증가하는 물리적 마모로, 파라미터를 건드려도 복구 불가능한 열화</td>
+            </tr>
+            <tr>
+              <td><b>시스템 동작</b></td>
+              <td><b>알람 미발생, 라인 정지 없음</b> (R2R 레시피 자동 보정 적용)</td>
+              <td><b>알람 발생, 해당 챔버만 즉시 단독 정지</b> (타 챔버 정상 가동)</td>
+            </tr>
+            <tr>
+              <td><b>UI 표기</b></td>
+              <td>'자동 보정 이력' 타임라인에 보정량(ΔP, ΔFlow) 기록</td>
+              <td>긴급 알람 팝업, 원인 소모품, 잔여수명(RUL), <b>[재가동] 버튼</b> 제시</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-h" style="margin-top:24px">왜 해당 챔버만 세우는가? (전공정 멀티챔버 아키텍처)</h3>
+        <p class="para">전공정 CMP 장비(Applied Materials Reflexion, Ebara 등)는 단일 메인프레임 내에 다수의 독립 플래튼/챔버(Platen 1 STI, Platen 2 W-Plug, Platen 3 Cu)를 탑재합니다.
+        Ch.A의 패드가 수명을 다했다고 해서 멀쩡한 Ch.B/Ch.C까지 멈추는 것은 막대한 생산 손실(Downtime Loss)을 유발합니다.
+        따라서 <b>이상 챔버만 단독 홀딩하고 타 챔버의 양산은 지속</b>되며, 작업자가 패드를 교체하고 재가동을 승인하는 순간 즉시 가공이 재개됩니다.</p>
+      </section>
+
+      <!-- RUL 추정 -->
+      <section class="panel" id="p-rul">
+        <div class="panel-head"><h2>4. 소모품 잔여수명(RUL) 추정 모델</h2></div>
+        <p class="para">폴리싱 패드(IC1000)는 다이아몬드 드레서에 의해 지속적으로 컨디셔닝되며 홈 깊이(Groove Depth, 초기 1200μm)가 마모됩니다.
+        홈 깊이가 400μm 이하로 떨어지면 슬러리 유동 통로가 막히며 수막 현상(Hydroplaning)과 스크래치가 급증합니다.
+        본 시스템은 실시간 마모 궤적을 기반으로 잔여 웨이퍼 매수와 <b>95% 신뢰구간</b>을 동시 제공합니다.</p>
+
+        <table class="kv" style="margin-top:16px">
+          <tr><td><b>패드 마모 한계 기준선</b></td><td>잔여 홈 깊이 400.0 μm</td></tr>
+          <tr><td><b>조기 경보(MAJ) 기준선</b></td><td>잔여 홈 깊이 480.0 μm (차기 정기 PM으로 이관)</td></tr>
+          <tr><td><b>불확실성 구간 모델링</b></td><td>Stochastic Degradation Modeling (95% CI: ±1.96 · σ_RUL)</td></tr>
+        </table>
+      </section>
+
+      <!-- 한계와 운영 인사이트 -->
+      <section class="panel" id="p-limits">
+        <div class="panel-head"><h2>5. 한계와 운영 인사이트</h2></div>
+        <h3 class="sub-h">1. 왜 딥러닝 종단간(End-to-End) 알람을 쓰지 않고 결정론적 분기를 썼는가?</h3>
+        <p class="para">실제 반도체 생산 현장에서는 "왜 라인이 정지되었는가"에 대한 완전한 설명 가능성(Explainability)과 재현성이 요구됩니다.
+        블랙박스 딥러닝에 설비 셧다운 권한을 주면 모델의 오판(False Positive)으로 수억 원 가치의 웨이퍼 로트가 폐기될 수 있습니다.
+        따라서 <b>가상계측은 딥러닝(MLP)의 뛰어난 근사 능력</b>을 활용하고, <b>알람 분기 및 정지 판단은 검증된 물리 룰 엔진</b>으로 분리했습니다.</p>
+
+        <h3 class="sub-h">2. 데이터의 한계</h3>
+        <p class="para">공개된 PHM 2016 Data Challenge CMP 스키마를 준용하였으며, 설비 거동은 학계에 입증된 프레스턴 식 및 마모 역학을 기반으로 충실하게 모사한 합성 데이터를 사용했습니다.
+        실제 fab 적용 시에는 슬러리 배치 변경(Chemical Lot Drift) 및 환경 온도 계절 변동성을 반영한 온라인 모델 재학습(Continuous Learning) 파이프라인이 보강되어야 합니다.</p>
+      </section>
+
+    </main>
+
+    <footer class="ftr">
+      반도체 전공정 CMP 가상계측 & 알람 이원화 프로젝트 · <a class="inline-link" href="./">시뮬레이터로 이동</a> ·
+      <a class="inline-link" href="https://github.com/jiu7021/CMP" target="_blank">GitHub 저장소</a>
+    </footer>
+  </div>
+</div>
+</div>
+<script src="snowui-shell.js"></script>
+</body>
+</html>
