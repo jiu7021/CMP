@@ -48,6 +48,9 @@
     <div class="topbar-r">
       <span class="badge ok" title="IEEE PHM 2016 Data Challenge CMP Dataset">PHM 2016 CMP 실데이터</span>
       <span class="badge ghost" id="daybadge">—</span>
+      <button id="dock-toggle-top" class="btn dock-top-btn" title="실시간 알람 관제 독 열기/닫기">
+        <span class="dock-top-dot"></span>관제 독 <span id="dock-top-cnt">0</span>
+      </button>
       <a class="btn primary" href="project.html">엔지니어링 리포트 →</a>
       <button id="theme-btn" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
     </div>
@@ -65,7 +68,8 @@
     <nav class="daybar" id="days"></nav>
   </div>
 
-  <div class="scroll">
+  <div class="col-body">
+    <div class="scroll">
     <div class="hero">
       <h1>반도체 CMP 가상계측 & 알람 이원화 시뮬레이터</h1>
       <p class="sub">PHM 2016 반도체 CMP 공정 데이터셋(3개 챔버: Ch.A, Ch.B, Ch.C)의 100매 웨이퍼 연속 가공 시계열(08:00~18:00)을 재생합니다.
@@ -261,7 +265,8 @@
           <nav id="logtabs" class="tabs sm">
             <button class="on" data-v="all">전체 이력 <span id="nall"></span></button>
             <button data-v="auto">⚡ 자동 보정 (APC) <span id="nauto"></span></button>
-            <button data-v="man">👤 사람 조치 (PM 필요) <span id="nman"></span></button>
+            <button data-v="warn">🟡 사전 예보 (PM) <span id="nwarn"></span></button>
+            <button data-v="man">🔴 사람 조치 (정지·PM) <span id="nman"></span></button>
           </nav></div>
         <div id="log"></div>
       </section>
@@ -302,9 +307,51 @@
       데이터: IEEE PHM 2016 Data Challenge (반도체 CMP 공정 센서 및 실측 MRR 데이터셋) ·
       가상계측 모델: Advanced MLP (Val R² 0.9710) · <a class="inline-link" href="https://github.com/jiu7021/CMP" target="_blank">GitHub Repository</a>
     </footer>
-  </div>
-</div>
-</div>
+  </div> <!-- /.scroll -->
+
+  <!-- 우측 실시간 알람 관제 독 (Live Alarm Monitoring Dock) -->
+  <aside class="alarm-dock" id="alarm-dock">
+    <div class="dock-head">
+      <div class="dock-title">
+        <span class="dock-live-pulse"></span>
+        <b>실시간 알람 관제 독</b>
+        <span class="dock-count-pill" id="dock-cnt">0</span>
+      </div>
+      <button class="dock-close-btn" id="dock-close-btn" title="관제 독 접기" aria-label="관제 독 접기">✕</button>
+    </div>
+
+    <!-- 실시간 3단계 HUD -->
+    <div class="dock-hud">
+      <div class="dock-hud-box auto" data-f="auto" title="R2R APC 무중단 자동보정">
+        <span class="dh-num" id="dh-auto">0</span>
+        <span class="dh-lbl">⚡ R2R 자동</span>
+      </div>
+      <div class="dock-hud-box warn" data-f="warn" title="RUL 소모품 사전예보 (PM 예약)">
+        <span class="dh-num" id="dh-warn">0</span>
+        <span class="dh-lbl">🟡 사전예보</span>
+      </div>
+      <div class="dock-hud-box crit" data-f="man" title="비가역적 마모 챔버 단독정지">
+        <span class="dh-num" id="dh-crit">0</span>
+        <span class="dh-lbl">🔴 라인정지</span>
+      </div>
+    </div>
+
+    <!-- 필터 탭 -->
+    <div class="dock-filter-bar">
+      <button class="dtab on" data-f="all">전체</button>
+      <button class="dtab" data-f="auto">자동보정</button>
+      <button class="dtab" data-f="warn">사전예보</button>
+      <button class="dtab" data-f="man">설비정지</button>
+    </div>
+
+    <!-- 실시간 스트리밍 카드 목록 -->
+    <div class="dock-body" id="dock-log">
+      <div class="dock-empty">재생을 시작하면 실시간 알람이 여기에 스트리밍됩니다.</div>
+    </div>
+  </aside>
+</div> <!-- /.col-body -->
+</div> <!-- /.col -->
+</div> <!-- /.shell -->
 
 <script src="data.js"></script>
 <script src="app.js"></script>

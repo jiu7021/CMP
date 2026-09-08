@@ -327,9 +327,11 @@ function renderTwin() {
   }
 }
 
-// ── 조치 이력 통합 뷰 (사람 개입 + 자동 보정 동시 표출) ────────
+// ── 조치 이력 통합 뷰 (사람 개입 + 자동 보정 + RUL 사전예보 실시간 표출) ────────
 const seenAlarms = () => S[day].alarms.filter(a => alarmAt[a.id] !== undefined);
 const seenActions = () => S[day].actions.filter(c => dIdx[c.eqp] >= c.step);
+
+let dockFilter = 'all';
 
 function renderLog() {
   const d = S[day];
@@ -338,7 +340,7 @@ function renderLog() {
 
   const events = [];
 
-  // 자동 보정 건
+  // 1. R2R 자동 보정 건
   actions.filter(c => c.auto).forEach(c => {
     events.push({
       time: c.time,
@@ -346,7 +348,7 @@ function renderLog() {
       eqp: c.eqp,
       type: 'auto',
       grade: 'INFO',
-      badge: '⚡ R2R APC 자동 보정',
+      badge: '⚡ R2R APC 자동보정',
       badgeClass: 'auto',
       title: c.act,
       desc: c.why,
@@ -354,27 +356,38 @@ function renderLog() {
     });
   });
 
-  // 사람 개입 건 (알람 및 PM 수동 조치)
+  // 2. 사람 개입 및 사전 예보 건 (알람 및 PM 조치)
   alarms.forEach(a => {
     const act = actions.find(c => c.alarm_id === a.id);
     const dec = act ? decided[key(act)] : null;
     const isCrit = a.grade === 'CRIT';
+    const isWarn = a.grade === 'WARN';
 
     let resultText = '조치 완료';
+    let badgeText = '👤 사람 개입 (소모품 PM)';
+    let badgeClass = 'man';
+    let evType = 'man';
+
     if (isCrit) {
+      badgeText = '🔴 설비 단독 정지';
+      badgeClass = 'man';
+      evType = 'man';
       resultText = dec === '승인' ? '조치 완료 · 챔버 재가동됨' : (dIdx[a.eqp] < a.endStep ? '단독 정지 중 · 승인 대기' : '~' + a.end);
-    } else {
-      resultText = '차기 PM 이관 등록됨';
+    } else if (isWarn) {
+      badgeText = '🟡 RUL 사전 예보';
+      badgeClass = 'warn';
+      evType = 'warn';
+      resultText = act ? act.result : '차기 정기 PM 예약 완료 (라인 무중단)';
     }
 
     events.push({
       time: a.time,
       step: a.step,
       eqp: a.eqp,
-      type: 'man',
+      type: evType,
       grade: a.grade,
-      badge: '👤 사람 개입 (소모품 PM)',
-      badgeClass: 'man',
+      badge: badgeText,
+      badgeClass: badgeClass,
       title: `${a.ko} (${a.value})`,
       desc: (act ? act.why : '') + (a.sub && a.sub.length ? ` [동반: ${a.sub.map(x=>x.ko).join(', ')}]` : ''),
       result: resultText
@@ -383,17 +396,21 @@ function renderLog() {
 
   events.sort((x, y) => x.step - y.step);
 
+  // Bottom table filtering
   let filtered = events;
   if (logv === 'auto') filtered = events.filter(e => e.type === 'auto');
+  if (logv === 'warn') filtered = events.filter(e => e.type === 'warn');
   if (logv === 'man')  filtered = events.filter(e => e.type === 'man');
 
   const rows = filtered.slice().reverse().map(ev => {
     const tagHtml = `<span class="badge-tag ${ev.badgeClass}">${ev.badge}</span>`;
     const pill = ev.type === 'auto'
       ? `<span class="pill auto">무중단 실시간 보정</span>`
-      : ev.result.includes('대기')
-        ? `<span class="pill man">⚠️ 정지 · 승인 대기</span>`
-        : `<span class="pill auto">확인 완료</span>`;
+      : ev.type === 'warn'
+        ? `<span class="pill warn">정기 PM 슬롯 예약</span>`
+        : ev.result.includes('대기')
+          ? `<span class="pill man">⚠️ 정지 · 승인 대기</span>`
+          : `<span class="pill auto">확인 완료</span>`;
 
     return `<div class="row">
       <span class="led ${ev.grade}"></span>
@@ -406,13 +423,46 @@ function renderLog() {
     </div>`;
   }).join('');
 
-  $('#log').innerHTML = rows || '<p class="empty">현재 시점까지 발생한 이력이 없습니다.</p>';
+  if ($('#log')) $('#log').innerHTML = rows || '<p class="empty">현재 시점까지 발생한 이력이 없습니다.</p>';
 
+  // Counts
   const nAuto = events.filter(e => e.type === 'auto').length;
+  const nWarn = events.filter(e => e.type === 'warn').length;
   const nMan = events.filter(e => e.type === 'man').length;
+
   if ($('#nall')) $('#nall').textContent = events.length;
   if ($('#nauto')) $('#nauto').textContent = nAuto;
+  if ($('#nwarn')) $('#nwarn').textContent = nWarn;
   if ($('#nman')) $('#nman').textContent = nMan;
+
+  // Live Dock HUD counts
+  if ($('#dh-auto')) $('#dh-auto').textContent = nAuto;
+  if ($('#dh-warn')) $('#dh-warn').textContent = nWarn;
+  if ($('#dh-crit')) $('#dh-crit').textContent = nMan;
+  if ($('#dock-cnt')) $('#dock-cnt').textContent = events.length;
+  if ($('#dock-top-cnt')) $('#dock-top-cnt').textContent = events.length;
+
+  // Render Right-side Live Dock Feed
+  let dockFiltered = events;
+  if (dockFilter === 'auto') dockFiltered = events.filter(e => e.type === 'auto');
+  if (dockFilter === 'warn') dockFiltered = events.filter(e => e.type === 'warn');
+  if (dockFilter === 'man')  dockFiltered = events.filter(e => e.type === 'man');
+
+  const dockCards = dockFiltered.slice().reverse().map(ev => {
+    return `<div class="dock-card ${ev.type}">
+      <div class="dock-card-top">
+        <span class="dock-tag ${ev.badgeClass}">${ev.badge}</span>
+        <span class="dock-time">${ev.time} · ${ev.eqp}</span>
+      </div>
+      <div class="dock-card-title">${ev.title}</div>
+      <div class="dock-card-desc">${ev.desc}</div>
+      <div class="dock-card-res">${ev.result}</div>
+    </div>`;
+  }).join('');
+
+  if ($('#dock-log')) {
+    $('#dock-log').innerHTML = dockCards || '<div class="dock-empty">현재 시점까지 발생한 실시간 알람이 없습니다.</div>';
+  }
 }
 
 // ── 재생 & KPI ────────────────────────────────────────
@@ -583,6 +633,46 @@ $('#logtabs').onclick = e => {
   document.querySelectorAll('#logtabs button').forEach(x => x.classList.toggle('on', x === b));
   renderLog();
 };
+
+// ── 실시간 알람 관제 독 이벤트 ──────────────────────────
+const toggleDock = () => {
+  const cb = document.querySelector('.col-body');
+  if (!cb) return;
+  cb.classList.toggle('dock-closed');
+  const isClosed = cb.classList.contains('dock-closed');
+  localStorage.setItem('cmp_dock_closed', isClosed ? '1' : '0');
+};
+
+const topDockBtn = document.querySelector('#dock-toggle-top');
+if (topDockBtn) topDockBtn.onclick = toggleDock;
+const closeDockBtn = document.querySelector('#dock-close-btn');
+if (closeDockBtn) closeDockBtn.onclick = toggleDock;
+
+const dfBar = document.querySelector('.dock-filter-bar');
+if (dfBar) {
+  dfBar.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    dockFilter = b.dataset.f;
+    document.querySelectorAll('.dock-filter-bar button').forEach(x => x.classList.toggle('on', x === b));
+    renderLog();
+  };
+}
+
+const dHud = document.querySelector('.dock-hud');
+if (dHud) {
+  dHud.onclick = e => {
+    const box = e.target.closest('.dock-hud-box'); if (!box) return;
+    dockFilter = box.dataset.f;
+    document.querySelectorAll('.dock-filter-bar button').forEach(x => x.classList.toggle('on', x.dataset.f === dockFilter));
+    renderLog();
+  };
+}
+
+// Restore saved dock state
+if (localStorage.getItem('cmp_dock_closed') === '1') {
+  const cb = document.querySelector('.col-body');
+  if (cb) cb.classList.add('dock-closed');
+}
 
 $('#play').onclick = () => playing ? pause() : play();
 $('#rst').onclick  = () => {

@@ -801,7 +801,312 @@ svg.ri {
   stroke-linejoin: round;
   opacity: 0.65;
 }
-.rail-row.on svg.ri { opacity: 1; }
+/* ── 우측 실시간 알람 관제 독 (Live Alarm Monitoring Dock) ── */
+.col-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.col-body .scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  position: relative;
+}
+
+.dock-top-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.dock-top-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+.dock-top-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #30d158;
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.85);
+}
+
+.alarm-dock {
+  width: 350px;
+  flex: none;
+  border-left: 1px solid var(--line);
+  background: rgba(18, 18, 20, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
+  overflow: hidden;
+}
+.col-body.dock-closed .alarm-dock {
+  width: 0 !important;
+  border-left: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px 13px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  background: rgba(255, 255, 255, 0.02);
+}
+.dock-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.dock-live-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #30d158;
+  box-shadow: 0 0 10px rgba(48, 209, 88, 0.95);
+  animation: live-pulse-dot 1.8s infinite;
+}
+@keyframes live-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+.dock-count-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+.dock-close-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--ink-40);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  transition: all var(--dur-fast) var(--ease);
+}
+.dock-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dock-hud {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.dock-hud-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dock-hud-box:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+.dh-num {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.dh-lbl {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-40);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.dock-hud-box.auto .dh-num { color: var(--ok); }
+.dock-hud-box.warn .dh-num { color: var(--warn); }
+.dock-hud-box.crit .dh-num { color: var(--bad); }
+
+.dock-filter-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  background: rgba(255, 255, 255, 0.015);
+}
+.dtab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--ink-40);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 6px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+.dtab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.dtab.on {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dock-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+}
+.dock-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: all 0.18s ease;
+  animation: slide-in-card 0.25s ease-out;
+}
+@keyframes slide-in-card {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dock-card:hover {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+.dock-card.auto {
+  border-left: 3px solid var(--ok);
+}
+.dock-card.warn {
+  border-left: 3px solid var(--warn);
+  background: rgba(255, 159, 10, 0.05);
+}
+.dock-card.man {
+  border-left: 3px solid var(--bad);
+  background: rgba(255, 69, 58, 0.08);
+  box-shadow: 0 0 14px rgba(255, 69, 58, 0.15);
+}
+.dock-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.dock-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.dock-tag.auto { background: rgba(52, 199, 89, 0.18); color: var(--ok); border: 1px solid rgba(52, 199, 89, 0.3); }
+.dock-tag.warn { background: rgba(255, 159, 10, 0.18); color: var(--warn); border: 1px solid rgba(255, 159, 10, 0.3); }
+.dock-tag.man { background: rgba(255, 69, 58, 0.18); color: var(--bad); border: 1px solid rgba(255, 69, 58, 0.3); }
+
+.dock-time {
+  font-size: 11px;
+  color: var(--ink-40);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.dock-card-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 17px;
+}
+.dock-card-desc {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 16px;
+}
+.dock-card-res {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ok);
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  line-height: 15px;
+}
+.dock-card.warn .dock-card-res { color: var(--warn); }
+.dock-card.man .dock-card-res { color: var(--bad); }
+
+.dock-empty {
+  text-align: center;
+  padding: 45px 16px;
+  color: var(--ink-40);
+  font-size: 12.5px;
+  line-height: 20px;
+}
+
+.badge-tag.warn {
+  background: rgba(255, 159, 10, 0.18);
+  color: var(--warn);
+  border: 1px solid rgba(255, 159, 10, 0.35);
+}
+.pill.warn {
+  background: rgba(255, 159, 10, 0.15);
+  color: var(--warn);
+}
+
+@media(max-width: 1280px) {
+  .alarm-dock {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.6);
+    background: #161619;
+  }
+}
 
 @media(max-width: 820px) {
   .daybar { padding: 0 16px 12px; }
