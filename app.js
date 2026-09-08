@@ -154,12 +154,39 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
     const x = X(m[0]);
     g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${m[1]}" stroke-width="1.2" opacity=".75"/>`;
   });
-  // 판정 기준선
-  shown.forEach(l => {
-    const y = Y(l.v);
-    g += `<line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="${l.c}" stroke-width="1" stroke-dasharray="3 3" opacity=".75"/>`
-       + `<text x="${W - PR}" y="${y - 3}" fill="${l.c}" font-size="9" text-anchor="end" opacity=".9">${l.t}</text>`;
+  // 판정 기준선 (글자 겹침 방지 Collision Avoidance & 다크 헤일로 스트로크)
+  const limitItems = shown.map(l => ({
+    ...l,
+    y: Y(l.v),
+    textY: Y(l.v) - 4,
+    textX: W - PR
+  })).sort((a, b) => a.y - b.y);
+
+  for (let i = 1; i < limitItems.length; i++) {
+    const prev = limitItems[i - 1];
+    const curr = limitItems[i];
+    const dy = curr.textY - prev.textY;
+    if (dy < 14) {
+      // 상하 간격이 14px 미만으로 겹칠 경우 지능형 분리
+      if (curr.y < H - PB - 12) {
+        // 하단 여유가 있으면 아래 기준선 글자를 선 밑으로 배치
+        curr.textY = curr.y + 11;
+        prev.textY = Math.max(PT + 8, prev.y - 4);
+      } else {
+        // 바닥 근처(예: 400 한계선)인 경우 좌우 오프셋으로 수평 분리
+        prev.textY = Math.max(PT + 8, prev.y - 4);
+        curr.textX = W - PR - 120;
+        curr.textY = curr.y - 4;
+      }
+    }
+  }
+
+  limitItems.forEach(l => {
+    g += `<line x1="${PL}" y1="${l.y}" x2="${W - PR}" y2="${l.y}" stroke="${l.c}" stroke-width="1" stroke-dasharray="3 3" opacity=".75"/>`
+       + `<text x="${l.textX}" y="${l.textY}" fill="${l.c}" font-size="9.5" font-weight="600" text-anchor="end" `
+       + `paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3.5" stroke-linejoin="round">${l.t}</text>`;
   });
+
   // 센서 데이터 라인
   series.forEach(s => {
     g += `<path d="${line(s.v)}" fill="none" stroke="${s.c}" stroke-width="${s.dyn ? 1 : 1.4}"${s.dyn ? ' stroke-dasharray="4 3" opacity=".8"' : ''}/>`;
@@ -171,11 +198,11 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
     g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${C.ink}" stroke-width="1" opacity=".45"/>`;
     series.filter(s => !s.dyn).forEach(s => g += `<circle cx="${x}" cy="${Y(s.v[c])}" r="2.4" fill="${s.c}"/>`);
   }
-  g += `<text x="${PL - 6}" y="${Y(hi) + 8}" fill="${C.mut}" font-size="9" text-anchor="end">${hi.toFixed(0)}</text>`
-     + `<text x="${PL - 6}" y="${Y(lo)}" fill="${C.mut}" font-size="9" text-anchor="end">${lo.toFixed(0)}</text>`;
+  g += `<text x="${PL - 6}" y="${Math.max(PT + 8, Y(hi) + 4)}" fill="${C.mut}" font-size="9" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3">${hi.toFixed(0)}</text>`
+     + `<text x="${PL - 6}" y="${Math.min(H - PB, Y(lo))}" fill="${C.mut}" font-size="9" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3">${lo.toFixed(0)}</text>`;
   [0, 0.25, 0.5, 0.75, 1].forEach(f => {
     const i = Math.round(f * (n - 1));
-    g += `<text x="${X(i)}" y="${H - 3}" fill="${C.mut}" font-size="9" text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}">${series[0].t[i]}</text>`;
+    g += `<text x="${X(i)}" y="${H - 3}" fill="${C.mut}" font-size="9" text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3">${series[0].t[i]}</text>`;
   });
 
   const leg = series.filter(s => s.name).map(s => `<span style="color:${s.c}">■</span> ${s.name}`).join(' &nbsp;');
@@ -498,9 +525,14 @@ function paint() {
 }
 
 function paintTabs() {
+  const dotClasses = ['ch-a', 'ch-b', 'ch-c'];
   $('#eqps').innerHTML = S[day].equipments.map((e, i) =>
-    `<button class="${i === eqp ? 'on' : ''}${halt[e.id] ? ' halted' : ''}" data-i="${i}">${e.id}
-      <em>${e.type}</em>${halt[e.id] ? '<b class="stopdot">정지</b>' : ''}</button>`).join('');
+    `<button class="${i === eqp ? 'on' : ''}${halt[e.id] ? ' halted' : ''}" data-i="${i}" title="${e.id} (${e.type}) 모니터링">
+      <span class="ch-dot ${dotClasses[i] || 'ch-a'}"></span>
+      <b>${e.id}</b>
+      <em>${e.type}</em>
+      ${halt[e.id] ? '<b class="stopdot">정지</b>' : ''}
+    </button>`).join('');
 }
 
 window.switchEqp = function(i) {
