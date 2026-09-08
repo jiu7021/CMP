@@ -33,6 +33,7 @@ let queue = [], saved = null;
 let live = {}, dIdx = {}, halt = {}, alarmAt = {}, replaced = {}, replaceIdx = {};
 let decided = {};
 let dockFilter = 'all';
+let lastEventsCount = -1, lastQueueCount = -1, lastFilter = '';
 
 const key = c => c.alarm_id + (c.esc ? '#esc' : '');
 const N = () => S[day].equipments[0].series.t.length;
@@ -41,6 +42,7 @@ const nowT = () => S[day].equipments[0].series.t[Math.max(cur, 0)];
 // ── 실시간 시계열 & 단독 챔버 정지 로직 ───────────────────────
 function resetLive() {
   live = {}; dIdx = {}; halt = {}; alarmAt = {}; replaced = {}; replaceIdx = {};
+  lastEventsCount = -1; lastQueueCount = -1;
   S[day].equipments.forEach(e => {
     live[e.id] = {
       mrr_act: [], mrr_pred: [], press: [], flow: [], rpm: [],
@@ -110,7 +112,7 @@ function fillAll() {
 const haltSteps = () => S[day].equipments.reduce((tot, e) => tot + (live[e.id] ? live[e.id].halt.reduce((x, y) => x + y, 0) : 0), 0);
 
 // ── SVG 차트 (Y축 스케일 최적화 & 일자 뭉개짐 해결) ─────────────
-const W = 760, H = 84, PL = 46, PR = 10, PT = 8, PB = 15;
+const W = 820, H = 84, PL = 46, PR = 10, PT = 8, PB = 15;
 
 function chart({ label, unit, series, limits = [], marks = [], fills = [], base, minSpread, clampFloor }) {
   const n = series[0].t.length, c = cur;
@@ -171,7 +173,7 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
   }
   limitItems.forEach(l => {
     g += `<line x1="${PL}" y1="${l.y}" x2="${W - PR}" y2="${l.y}" stroke="${l.c}" stroke-width="0.9" stroke-dasharray="3 3" opacity=".65"/>`
-       + `<text x="${W - PR - 4}" y="${Math.min(H - PB - 2, Math.max(PT + 9, l.labelY - 2))}" fill="${l.c}" font-size="${l.s || 9.5}" font-weight="600" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3.5" stroke-linejoin="round">${l.t}</text>`;
+       + `<text x="${W - PR - 4}" y="${Math.min(H - PB - 2, Math.max(PT + 9, l.labelY - 2))}" fill="${l.c}" font-size="9.5" font-weight="600" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3.5" stroke-linejoin="round">${l.t}</text>`;
   });
 
   // 데이터 라인
@@ -239,12 +241,6 @@ function renderCharts() {
         { v: 204, c: C.bad, t: '204 하한 (자동보정)' }
       ],
       minSpread: 50, clampFloor: 170, marks, fills
-    }),
-    chart({
-      label: '테이블 모터 마찰 전류', unit: '[A] · 패드 마찰 특성 지표',
-      series: [{ t: s.t, v: L.curr, c: C.ink }],
-      limits: [{ v: 16.5, c: C.bad, t: '16.5A 마찰 한계' }],
-      minSpread: 4.0, clampFloor: 12.0, marks, fills
     }),
     chart({
       label: '폴리싱 패드 잔여 홈 깊이 & RUL', unit: '[μm] · 400μm 도달 시 즉시 정지',
@@ -333,7 +329,7 @@ function renderTwin() {
 const seenAlarms = () => S[day].alarms.filter(a => alarmAt[a.id] !== undefined);
 const seenActions = () => S[day].actions.filter(c => dIdx[c.eqp] >= c.step);
 
-function renderLog() {
+function renderLog(force = false) {
   const d = S[day];
   const alarms = seenAlarms();
   const actions = seenActions();
@@ -356,7 +352,7 @@ function renderLog() {
     });
   });
 
-  // 2. 사람 개입 및 사전 예보 건 (알람 및 PM 조치)
+  // 2. 사람 개입 및 사전 예보 건
   alarms.forEach(a => {
     const act = actions.find(c => c.alarm_id === a.id);
     const dec = act ? decided[key(act)] : null;
@@ -390,8 +386,7 @@ function renderLog() {
       badgeClass: badgeClass,
       title: `${a.ko} (${a.value})`,
       desc: (act ? act.why : '') + (a.sub && a.sub.length ? ` [동반: ${a.sub.map(x => x.ko).join(', ')}]` : ''),
-      result: resultText,
-      rawAction: act
+      result: resultText
     });
   });
 
@@ -401,14 +396,13 @@ function renderLog() {
   const nWarn = events.filter(e => e.type === 'warn').length;
   const nMan = events.filter(e => e.type === 'man').length;
 
-  // 빠른 HUD 카운터 갱신
+  // HUD 수치 갱신
   if ($('#fc-cnt')) $('#fc-cnt').textContent = events.length;
   if ($('#fc-auto')) $('#fc-auto').textContent = nAuto;
   if ($('#fc-warn')) $('#fc-warn').textContent = nWarn;
   if ($('#fc-crit')) $('#fc-crit').textContent = nMan;
   if ($('#dock-top-cnt')) $('#dock-top-cnt').textContent = events.length;
 
-  // 플로팅 런처 배지 갱신
   const launcher = $('#fab-launcher');
   const badge = $('#fab-badge');
   if (badge) {
@@ -418,15 +412,20 @@ function renderLog() {
     launcher.classList.toggle('has-crit', queue.length > 0);
   }
 
-  // 1. 고우선순위 상단 고정 영역 (#console-pinned)
+  // 깜빡임 방지: 이벤트 수량이나 큐 상태, 필터가 바뀐 경우에만 목록 DOM 다시 빌드
+  if (!force && events.length === lastEventsCount && queue.length === lastQueueCount && dockFilter === lastFilter) {
+    return;
+  }
+  lastEventsCount = events.length;
+  lastQueueCount = queue.length;
+  lastFilter = dockFilter;
+
+  // 1. 고우선순위 상단 고정 영역
   const pinnedEl = $('#console-pinned');
   if (pinnedEl) {
     let pinnedHtml = '';
-
-    // 긴급 정지 건 (대기 큐에 있는 경우 즉시 승인 버튼 표출)
     if (queue.length > 0) {
       queue.forEach(c => {
-        const a = S[day].alarms.find(x => x.id === c.alarm_id);
         pinnedHtml += `
           <div class="fc-card man">
             <div class="fc-card-top">
@@ -440,7 +439,6 @@ function renderLog() {
       });
     }
 
-    // 사전 예보 건 (WARN)
     const warnEvents = events.filter(e => e.type === 'warn');
     warnEvents.forEach(ev => {
       pinnedHtml += `
@@ -458,7 +456,7 @@ function renderLog() {
     pinnedEl.innerHTML = pinnedHtml || '<div class="fc-pinned-empty">현재 긴급 정지 및 예보 없음 (정상 가동)</div>';
   }
 
-  // 2. 실시간 피드 영역 (#console-feed)
+  // 2. 실시간 피드 영역
   const feedEl = $('#console-feed');
   if (feedEl) {
     let feedFiltered = events;
@@ -483,7 +481,7 @@ function renderLog() {
   }
 }
 
-// ── 재생 & KPI ────────────────────────────────────────
+// ── 재생 & 속도계/가로막대 KPI ────────────────────────
 function renderKpi() {
   const d = S[day], act = seenActions();
   const auto = act.filter(c => c.auto).length;
@@ -494,17 +492,65 @@ function renderKpi() {
   const L = live[e.id];
   const curMRR = (halt[e.id] ? 0 : (L && L.mrr_pred[cur] ? L.mrr_pred[cur] : 2204));
 
-  const kpiEl = $('#kpi');
-  if (!kpiEl) return;
-  kpiEl.innerHTML = [
-    ['가상계측 MRR (제거율)', `${curMRR.toFixed(0)} Å/min`, '목표 2200 Å/min (정상 제어)'],
-    ['원시 센서 임계 초과', raw, '단순 알람 누적'],
-    ['R2R 자동 보정', auto, 'Preston 레시피 보정 (무중단)'],
-    ['사람 조치 필요', act.length - auto, '비가역 소모품 교체 (PM)'],
-    ['회피한 라인 정지', auto, '설비 셧다운 차단 효과'],
-    ['정지 손실 시간', (hs * STEP_MIN) + '분', hs ? '조치 대기 중 챔버 단독 정지' : '정상 가동 (손실 0분)']
-  ].map(([k, v, sb], i) => `<div class="kpi${i === 0 ? ' hero-tint' : ''}">
-       <div class="kpi-lab">${k}</div><div class="kpi-val">${v}</div><div class="kpi-sub">${sb}</div></div>`).join('');
+  // 1. 속도계 게이지 지침 회전 & 수치 업데이트
+  let deg = 0;
+  if (halt[e.id]) {
+    deg = -120; // 최저각도로 강하
+  } else {
+    const clamped = Math.max(1800, Math.min(2600, curMRR));
+    deg = ((clamped - 1800) / 800) * 240 - 120; // -120도 ~ +120도
+  }
+  const needleEl = $('#speedo-needle-group');
+  if (needleEl) needleEl.style.transform = `rotate(${deg.toFixed(1)}deg)`;
+
+  const sVal = $('#speedo-mrr-val');
+  const sDesc = $('#speedo-mrr-desc');
+  if (sVal) sVal.textContent = halt[e.id] ? '0' : Math.round(curMRR).toLocaleString();
+  if (sDesc) {
+    if (halt[e.id]) {
+      sDesc.textContent = '⚠️ 챔버 단독 정지 (0 Å/min)';
+      sDesc.className = 'speedo-sub-row bad';
+    } else {
+      const mrrA = L.mrr_act[cur] || 2200;
+      const diff = curMRR - mrrA;
+      const isNormal = curMRR >= 2100 && curMRR <= 2300;
+      sDesc.textContent = isNormal
+        ? `실측 오차 ${diff >= 0 ? '+' : ''}${diff.toFixed(1)} Å/min (정상 제어 윈도우)`
+        : `관리 한계선 이탈: ${Math.round(curMRR)} Å/min (주의)`;
+      sDesc.className = isNormal ? 'speedo-sub-row ok' : 'speedo-sub-row warn';
+    }
+  }
+
+  // 2. 가로 막대 그래프 5종 수치 및 너비 채우기
+  const rawVal = $('#b-raw-val');
+  const rawFill = $('#b-raw-fill');
+  if (rawVal) rawVal.textContent = `${raw}건`;
+  if (rawFill) rawFill.style.width = `${Math.min(100, Math.max(4, (raw / 160) * 100))}%`;
+
+  const autoVal = $('#b-auto-val');
+  const autoFill = $('#b-auto-fill');
+  if (autoVal) autoVal.textContent = `${auto}건 (무중단 100%)`;
+  if (autoFill) autoFill.style.width = `${Math.min(100, Math.max(6, (auto / 28) * 100))}%`;
+
+  const manCount = act.length - auto;
+  const manVal = $('#b-man-val');
+  const manFill = $('#b-man-fill');
+  if (manVal) manVal.textContent = `${manCount}건`;
+  if (manFill) manFill.style.width = `${Math.min(100, manCount * 45)}%`;
+
+  const avoidVal = $('#b-avoid-val');
+  const avoidFill = $('#b-avoid-fill');
+  const avoidPct = raw > 0 ? Math.min(99, Math.round((auto / Math.max(1, auto + manCount)) * 100)) : 96;
+  if (avoidVal) avoidVal.textContent = `${auto}건 (차단율 ${avoidPct}%)`;
+  if (avoidFill) avoidFill.style.width = `${avoidPct}%`;
+
+  const dtMins = hs * STEP_MIN;
+  const dtVal = $('#b-dt-val');
+  const dtFill = $('#b-dt-fill');
+  const dtSub = $('#b-dt-sub');
+  if (dtVal) dtVal.textContent = `${dtMins}분`;
+  if (dtFill) dtFill.style.width = `${Math.min(100, (dtMins / 60) * 100)}%`;
+  if (dtSub) dtSub.textContent = hs ? '조치 대기 중 챔버 단독 정지 손실 누적' : '정상 연속 가동 중 (손실 0분)';
 }
 
 function renderBar() {
@@ -622,6 +668,7 @@ window.switchEqp = function(i) {
   paintTabs();
   renderCharts();
   renderTwin();
+  renderKpi();
 };
 
 function render() {
@@ -670,6 +717,7 @@ if (eqpsClickEl) {
     document.querySelectorAll('#eqps button').forEach((x, i) => x.classList.toggle('on', i === eqp));
     renderCharts();
     renderTwin();
+    renderKpi();
   };
 }
 
@@ -715,7 +763,7 @@ if (fcFilterBar) {
     const b = e.target.closest('button'); if (!b) return;
     dockFilter = b.dataset.f;
     document.querySelectorAll('.fc-filter-bar button').forEach(x => x.classList.toggle('on', x === b));
-    renderLog();
+    renderLog(true);
   };
 }
 
@@ -726,7 +774,7 @@ if (fcHud) {
     const box = e.target.closest('.fc-hud-box'); if (!box) return;
     dockFilter = box.dataset.f;
     document.querySelectorAll('.fc-filter-bar button').forEach(x => x.classList.toggle('on', x.dataset.f === dockFilter));
-    renderLog();
+    renderLog(true);
   };
 }
 

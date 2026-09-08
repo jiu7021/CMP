@@ -13,16 +13,16 @@
 <body>
 <div class="shell">
 
-<!-- 좌측 네비게이션 레일 -->
+<!-- 좌측 네비게이션 레일 (220px 고정 폭, 단일 행 유지) -->
 <aside class="rail">
   <div class="rail-brand"><span class="rail-dot"></span><span>CMP Studio</span></div>
 
   <div class="rail-sec">대시보드</div>
   <nav class="rail-group">
-    <a class="rail-row on" href="#s-twin"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 8V2.2M8 8l4.3 4.3"/></svg>3D 디지털 트윈</a>
-    <a class="rail-row" href="#s-chart"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5l3.4-4 2.6 2.4L13.8 4"/><path d="M2 2v12h12"/></svg>가상계측 · 센서 차트</a>
-    <a class="rail-row" href="#s-live"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12M7 2v12"/></svg>공정 운영 현황</a>
-    <a class="rail-row" href="#s-about"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.2h5.5L13 5.6v8.2H4z"/><path d="M9.3 2.4v3.4h3.4"/></svg>설계 문서 & 읽는 법</a>
+    <a class="rail-row on" href="#s-twin" title="3D 디지털 트윈"><svg class="ri" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 8V2.2M8 8l4.3 4.3"/></svg>3D 디지털 트윈</a>
+    <a class="rail-row" href="#s-chart" title="가상계측 센서 트렌드 차트"><svg class="ri" viewBox="0 0 16 16"><path d="M2 12.5l3.4-4 2.6 2.4L13.8 4"/><path d="M2 2v12h12"/></svg>가상계측 차트</a>
+    <a class="rail-row" href="#s-live" title="공정 운영 현황 및 장비 상태"><svg class="ri" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12M7 2v12"/></svg>공정 운영 현황</a>
+    <a class="rail-row" href="#s-about" title="설계 문서 및 아키텍처 읽는 법"><svg class="ri" viewBox="0 0 16 16"><path d="M4 2.2h5.5L13 5.6v8.2H4z"/><path d="M9.3 2.4v3.4h3.4"/></svg>설계 문서</a>
   </nav>
 
   <div class="rail-sec">연마 챔버 (Chamber)</div>
@@ -70,7 +70,7 @@
     <nav class="daybar" id="days"></nav>
   </div>
 
-  <!-- 단일 부드러운 스크롤 영역 -->
+  <!-- 단일 부드러운 스크롤 영역 (와이드 1760px 최적화) -->
   <div class="scroll">
     <div class="hero">
       <h1>반도체 CMP 가상계측 & 알람 이원화 시뮬레이터</h1>
@@ -80,38 +80,24 @@
 
     <div id="hold" class="hold"></div>
 
-    <!-- 2열 멀티 패널 대시보드 그리드 (Mockup 1안 정합) -->
+    <!-- 대시보드 메인 레이아웃 (빈 공간 없는 와이드 멀티 패널 그리드) -->
     <main class="dashboard-grid">
 
-      <!-- 좌측 열: 차트 & KPI 운영 현황 -->
-      <div class="dash-col dash-col-left">
-        <!-- 가상계측 & 센서 트렌드 -->
-        <section class="panel" id="s-chart">
+      <!-- 상단 2열 그리드: 좌측(차트) + 우측(3D 디지털 트윈) -->
+      <div class="dash-row-top">
+
+        <!-- 좌측: 가상계측 & 핵심 센서 트렌드 차트 -->
+        <section class="panel panel-chart" id="s-chart">
           <div class="panel-head">
             <h2>가상계측 · 센서 트렌드 차트</h2>
             <nav id="eqps" class="tabs sm"></nav>
           </div>
           <div id="charts"></div>
-          <p class="hint" style="margin-top:12px">세로선은 이상 감지 시점, 붉은 음영은 해당 챔버 단독 정지 구간입니다.
+          <p class="hint" style="margin-top:10px">세로선은 이상 감지 시점, 붉은 음영은 해당 챔버 단독 정지 구간입니다.
           공정 제어 밴드(Process Window) 스케일링으로 정지 중에도 신호 거동이 유지됩니다.</p>
         </section>
 
-        <!-- 공정 운영 현황 & AI 양산 브리핑 -->
-        <section class="panel" id="s-live">
-          <div class="panel-head">
-            <h2>공정 운영 현황</h2>
-            <div class="hint" id="title"></div>
-          </div>
-          <div class="kpi-row" id="kpi"></div>
-          <div class="brief-box">
-            <span class="tag">AI 양산 브리핑</span>
-            <p id="brief"></p>
-          </div>
-        </section>
-      </div>
-
-      <!-- 우측 열: 3D 디지털 트윈 & 실시간 텔레메트리 게이지 -->
-      <div class="dash-col dash-col-right">
+        <!-- 우측: 3D 디지털 트윈 & 실시간 텔레메트리 게이지 -->
         <section class="panel panel-twin" id="s-twin">
           <div class="panel-head">
             <h2>⚙️ 반도체 CMP 3D 디지털 트윈 (<span id="twin-ch-name">Ch.A</span>)</h2>
@@ -271,7 +257,7 @@
               </svg>
             </div>
 
-            <!-- 실시간 챔버 센서 4대 게이지 -->
+            <!-- 실시간 챔버 센서 4대 게이지 (2x2) -->
             <div class="cmp-gauges-grid">
               <div class="gauge-card">
                 <div class="gauge-lab">가상계측 MRR (제거율)</div>
@@ -296,40 +282,178 @@
             </div>
           </div>
         </section>
-      </div>
+      </div> <!-- /.dash-row-top -->
 
-      <!-- 하단 전체 열: CMP 아키텍처 & 물리 거동 가이드 (3개 카드) -->
-      <div class="dash-col-full">
-        <section class="panel" id="s-about">
-          <div class="panel-head">
-            <h2>CMP 공정 운영 아키텍처 & 물리 거동 가이드</h2>
-            <div class="hint">상세 공학적 수치와 한계는 <a class="inline-link" href="project.html">엔지니어링 리포트</a>에 수록되어 있습니다</div>
+      <!-- 중간 전체 폭: 공정 운영 현황 & 장비 종합 상태 (Equipment Status: 속도계 + 가로 막대 그래프) -->
+      <section class="panel panel-status" id="s-live">
+        <div class="panel-head">
+          <h2>공정 운영 현황 & 장비 종합 상태 (Equipment Status)</h2>
+          <div class="hint" id="title"></div>
+        </div>
+
+        <div class="eqp-status-container">
+          <!-- 좌측: 자동차 계기판/속도계 형태의 가상계측 MRR 게이지 -->
+          <div class="speedo-box">
+            <div class="status-card-header">
+              <span class="status-dot ok"></span>
+              <b>가상계측 MRR 제거율 계기판</b>
+              <span class="status-tag">정상 제어 밴드 (2,100~2,300 Å/min)</span>
+            </div>
+
+            <div class="speedo-visual-wrap">
+              <svg viewBox="0 0 260 175" class="speedo-svg">
+                <defs>
+                  <linearGradient id="speedo-bg-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="rgba(255,255,255,0.04)"/>
+                    <stop offset="100%" stop-color="rgba(255,255,255,0.08)"/>
+                  </linearGradient>
+                  <linearGradient id="speedo-norm-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#30d158"/>
+                    <stop offset="100%" stop-color="#00e5ff"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- 배경 게이지 트랙 (240도 원호: 150도 ~ 390도) -->
+                <path d="M 47.7 177.5 A 95 95 0 1 1 212.3 177.5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="16" stroke-linecap="round"/>
+
+                <!-- 하한 이탈 경고 구간 (1800 ~ 2100 Å/min: 150도 ~ 240도) -->
+                <path d="M 47.7 177.5 A 95 95 0 0 1 82.5 47.7" fill="none" stroke="rgba(255,159,10,0.35)" stroke-width="16" stroke-linecap="round"/>
+
+                <!-- 정상 공정 윈도우 구간 (2100 ~ 2300 Å/min: 240도 ~ 300도) -->
+                <path d="M 82.5 47.7 A 95 95 0 0 1 177.5 47.7" fill="none" stroke="url(#speedo-norm-grad)" stroke-width="16" stroke-linecap="round"/>
+
+                <!-- 상한 이탈 경고 구간 (2300 ~ 2600 Å/min: 300도 ~ 390도) -->
+                <path d="M 177.5 47.7 A 95 95 0 0 1 212.3 177.5" fill="none" stroke="rgba(255,159,10,0.35)" stroke-width="16" stroke-linecap="round"/>
+
+                <!-- 눈금 틱 마크 -->
+                <line x1="58" y1="160" x2="67" y2="154" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                <line x1="89" y1="59" x2="96" y2="71" stroke="#30d158" stroke-width="2"/>
+                <line x1="130" y1="35" x2="130" y2="51" stroke="#00e5ff" stroke-width="2.5"/>
+                <line x1="171" y1="59" x2="164" y2="71" stroke="#30d158" stroke-width="2"/>
+                <line x1="202" y1="160" x2="193" y2="154" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+
+                <!-- 기준 레이블 -->
+                <text x="40" y="182" fill="rgba(255,255,255,0.4)" font-size="9" font-weight="600" text-anchor="end">1800</text>
+                <text x="74" y="42" fill="#ff9f0a" font-size="9" font-weight="700" text-anchor="end">2100 LCL</text>
+                <text x="130" y="28" fill="#00e5ff" font-size="10" font-weight="800" text-anchor="middle">목표 2200</text>
+                <text x="186" y="42" fill="#ff9f0a" font-size="9" font-weight="700" text-anchor="start">2300 UCL</text>
+                <text x="220" y="182" fill="rgba(255,255,255,0.4)" font-size="9" font-weight="600" text-anchor="start">2600</text>
+
+                <!-- 동적 지침 바늘 (Needle Indicator) -->
+                <g id="speedo-needle-group" style="transform-origin: 130px 130px; transform: rotate(0deg); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+                  <line x1="130" y1="130" x2="130" y2="46" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" filter="drop-shadow(0 0 6px rgba(0,229,255,0.8))"/>
+                  <circle cx="130" cy="130" r="8" fill="#1c1d22" stroke="#00e5ff" stroke-width="2.5"/>
+                  <circle cx="130" cy="130" r="3" fill="#00e5ff"/>
+                </g>
+              </svg>
+
+              <!-- 계기판 중앙 디지털 수치 표출 -->
+              <div class="speedo-digital">
+                <div class="speedo-val-row"><b id="speedo-mrr-val">2,204</b> <small>Å/min</small></div>
+                <div class="speedo-sub-row" id="speedo-mrr-desc">실측 대비 오차 +4.2 Å/min (정상 제어)</div>
+              </div>
+            </div>
           </div>
 
-          <div class="about-grid">
-            <div class="about-card">
-              <div class="about-icon">🔬</div>
-              <h3>가상계측(Virtual Metrology) 원리</h3>
-              <p>CMP는 회전하는 패드와 슬러리 화학 반응으로 웨이퍼 표면을 나노 단위로 평탄화하는 전공정 핵심입니다.
-              웨이퍼 전수를 물리 계측하면 팹 병목이 발생하므로, 압력·회전수·유량·마찰전류 등 설비 센서를 학습한 <b>머신러닝 가상계측 모델(MLP)</b>로 매 웨이퍼의 연마 제거율(MRR)을 실시간 추정합니다.</p>
+          <!-- 우측: 가로 막대 그래프 5종 (Distribution Progress Bars) -->
+          <div class="bars-box">
+            <div class="status-card-header">
+              <span class="status-dot auto"></span>
+              <b>공정 이상 및 R2R 조치 분포 (Distribution)</b>
+              <span class="status-tag">실시간 누적 집계</span>
             </div>
 
-            <div class="about-card">
-              <div class="about-icon">⚡</div>
-              <h3>알람 이원화: 가역적 편차 vs 소모품 마모</h3>
-              <p>사소한 유량 흔들림이나 압력 편차 등 가역적 이상은 <b>R2R APC(Run-to-Run)로 무중단 자동 보정</b>합니다.
-              반면 폴리싱 패드 잔여 홈(≤400μm) 도달이나 다이아몬드 컨디셔너 한계 등 비가역적 소모품 마모 발생 시에만 <b>해당 챔버를 단독 정지</b>시키고 교체 승인을 요청합니다.</p>
-            </div>
+            <div class="bars-list">
+              <!-- 1. 원시 센서 임계 초과 -->
+              <div class="bar-row">
+                <div class="bar-row-info">
+                  <span class="bar-row-lab">원시 센서 임계 초과</span>
+                  <span class="bar-row-val warn" id="b-raw-val">0건</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill raw" id="b-raw-fill" style="width: 0%;"></div></div>
+                <div class="bar-row-sub">단순 3σ 임계 이탈 (기존 팹 일괄 알람 유발)</div>
+              </div>
 
-            <div class="about-card">
-              <div class="about-icon">⏳</div>
-              <h3>챔버 단독 정지와 RUL 사전 예보</h3>
-              <p>패드 잔여 홈이 400~520μm 범위에 진입하면 라인을 세우지 않고 <b>차기 정기 PM(교대조)으로 교체를 사전 예약</b>합니다.
-              임계점(400μm) 도달 시 이상 챔버만 0 RPM으로 정지되며, 나머지 챔버는 100% 정상 가동을 유지하여 라인 전체 셧다운 손실을 차단합니다.</p>
+              <!-- 2. R2R 자동 보정 -->
+              <div class="bar-row">
+                <div class="bar-row-info">
+                  <span class="bar-row-lab">⚡ R2R APC 무중단 자동 보정</span>
+                  <span class="bar-row-val ok" id="b-auto-val">0건</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill auto" id="b-auto-fill" style="width: 0%;"></div></div>
+                <div class="bar-row-sub">슬러리 유량·공압 밸브 레시피 즉시 보정 (무중단)</div>
+              </div>
+
+              <!-- 3. 사람 조치 필요 -->
+              <div class="bar-row">
+                <div class="bar-row-info">
+                  <span class="bar-row-lab">👤 사람 개입 필요 (소모품 PM)</span>
+                  <span class="bar-row-val crit" id="b-man-val">0건</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill man" id="b-man-fill" style="width: 0%;"></div></div>
+                <div class="bar-row-sub">비가역 패드 잔여홈(≤400μm) 마모 챔버 단독 정지</div>
+              </div>
+
+              <!-- 4. 회피한 라인 정지 -->
+              <div class="bar-row">
+                <div class="bar-row-info">
+                  <span class="bar-row-lab">🛡️ 회피한 라인 정지 (셧다운 방지)</span>
+                  <span class="bar-row-val info" id="b-avoid-val">0건</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill avoid" id="b-avoid-fill" style="width: 0%;"></div></div>
+                <div class="bar-row-sub">APC 자동 해결로 방지한 불필요 설비 셧다운</div>
+              </div>
+
+              <!-- 5. 정지 손실 시간 -->
+              <div class="bar-row">
+                <div class="bar-row-info">
+                  <span class="bar-row-lab">⏱️ 정지 손실 시간 (Downtime Loss)</span>
+                  <span class="bar-row-val crit" id="b-dt-val">0분</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill dt" id="b-dt-fill" style="width: 0%;"></div></div>
+                <div class="bar-row-sub" id="b-dt-sub">정상 가동 (손실 0분)</div>
+              </div>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+
+        <!-- AI 양산 브리핑 -->
+        <div class="brief-box">
+          <span class="tag">AI 양산 브리핑</span>
+          <p id="brief"></p>
+        </div>
+      </section>
+
+      <!-- 하단 전체 폭: CMP 아키텍처 & 물리 거동 가이드 (3개 카드) -->
+      <section class="panel" id="s-about">
+        <div class="panel-head">
+          <h2>CMP 공정 운영 아키텍처 & 물리 거동 가이드</h2>
+          <div class="hint">상세 공학적 수치와 한계는 <a class="inline-link" href="project.html">엔지니어링 리포트</a>에 수록되어 있습니다</div>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-card">
+            <div class="about-icon">🔬</div>
+            <h3>가상계측(Virtual Metrology) 원리</h3>
+            <p>CMP는 회전하는 패드와 슬러리 화학 반응으로 웨이퍼 표면을 나노 단위로 평탄화하는 전공정 핵심입니다.
+            웨이퍼 전수를 물리 계측하면 팹 병목이 발생하므로, 압력·회전수·유량·마찰전류 등 설비 센서를 학습한 <b>머신러닝 가상계측 모델(MLP)</b>로 매 웨이퍼의 연마 제거율(MRR)을 실시간 추정합니다.</p>
+          </div>
+
+          <div class="about-card">
+            <div class="about-icon">⚡</div>
+            <h3>알람 이원화: 가역적 편차 vs 소모품 마모</h3>
+            <p>사소한 유량 흔들림이나 압력 편차 등 가역적 이상은 <b>R2R APC(Run-to-Run)로 무중단 자동 보정</b>합니다.
+            반면 폴리싱 패드 잔여 홈(≤400μm) 도달이나 다이아몬드 컨디셔너 한계 등 비가역적 소모품 마모 발생 시에만 <b>해당 챔버를 단독 정지</b>시키고 교체 승인을 요청합니다.</p>
+          </div>
+
+          <div class="about-card">
+            <div class="about-icon">⏳</div>
+            <h3>챔버 단독 정지와 RUL 사전 예보</h3>
+            <p>패드 잔여 홈이 400~520μm 범위에 진입하면 라인을 세우지 않고 <b>차기 정기 PM(교대조)으로 교체를 사전 예약</b>합니다.
+            임계점(400μm) 도달 시 이상 챔버만 0 RPM으로 정지되며, 나머지 챔버는 100% 정상 가동을 유지하여 라인 전체 셧다운 손실을 차단합니다.</p>
+          </div>
+        </div>
+      </section>
 
     </main>
 

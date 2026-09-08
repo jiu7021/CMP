@@ -524,38 +524,104 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   height: auto;
 }
 
-/* ── 2열 멀티 패널 대시보드 그리드 (Mockup Option 1) ─────── */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+/* ── 사이드바 고정 및 단일 행 유지 (줄바꿈 오류 완전 해결) ─── */
+.rail {
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  flex-shrink: 0 !important;
+  padding: 20px 12px !important;
+  box-sizing: border-box !important;
 }
-@media (max-width: 1200px) {
-  .dashboard-grid {
+.rail-brand {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  padding: 4px 8px 0 !important;
+  gap: 10px !important;
+  white-space: nowrap !important;
+}
+.rail-sec {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--ink-40) !important;
+  padding: 4px 10px 6px !important;
+  margin-top: 18px !important;
+  white-space: nowrap !important;
+}
+.rail-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  border-radius: var(--radius-8) !important;
+  font-size: 13.5px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+svg.ri {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 6px 0 2px !important;
+  flex: none !important;
+}
+
+/* ── 와이드 화면 전체 활용 (빈 여백 제거: max-width 1760px) ───── */
+.hero {
+  max-width: 1760px !important;
+  margin: 0 auto !important;
+  padding: 22px 28px 0 !important;
+}
+main {
+  max-width: 1760px !important;
+  margin: 0 auto !important;
+  padding: 16px 28px 48px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 22px !important;
+}
+.bar {
+  max-width: 1760px !important;
+  margin: 0 auto !important;
+  padding: 12px 28px !important;
+}
+
+/* ── 대시보드 그리드 구조 (상단 2열 + 중간 와이드 + 하단 가이드) ─ */
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+.dash-row-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+@media (max-width: 1240px) {
+  .dash-row-top {
     grid-template-columns: 1fr;
   }
 }
-.dash-col {
+.panel-chart, .panel-twin {
   display: flex;
   flex-direction: column;
-  gap: 24px;
   min-width: 0;
 }
-.dash-col-full {
-  grid-column: 1 / -1;
-}
 
-/* ── 우측 열: 3D 디지털 트윈 패널 & 게이지 ───────────────── */
-.panel-twin {
-  display: flex;
-  flex-direction: column;
-}
+/* ── 3D 디지털 트윈 뷰포트 ───────────────────────────────── */
 .cmp-twin-card {
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-16);
   padding: 16px;
   border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
 }
 .cmp-3d-viewport {
   position: relative;
@@ -573,7 +639,7 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   display: block;
 }
 
-/* 3D SVG 애니메이션 — 시뮬레이터 구동 중(.is-running)에만 동작 */
+/* 3D SVG 애니메이션 (시뮬레이터 구동 중에만 동작) */
 .iso-spin-anim,
 .iso-drip-anim,
 .iso-sweep-anim,
@@ -620,7 +686,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   50% { transform: translateY(3px); }
 }
 
-/* 챔버 단독 정지 시 헤드 상승(Head-Up & Retract) */
 .is-halted #carrier-head-group,
 .is-halted #conditioner-arm-assembly {
   transform: translateY(-20px) !important;
@@ -639,13 +704,13 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
 .cmp-gauges-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
   margin-top: 14px;
 }
 .gauge-card {
   background: rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-12);
-  padding: 12px 14px;
+  padding: 11px 13px;
   border: 1px solid var(--line);
   transition: transform 0.15s ease, background 0.15s ease;
 }
@@ -657,10 +722,10 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   font-size: 11.5px;
   color: var(--ink-40);
   font-weight: 500;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 .gauge-val {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
@@ -669,11 +734,178 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
 .gauge-sub {
   font-size: 10.5px;
   color: var(--ink-80);
-  margin-top: 3px;
+  margin-top: 2px;
 }
 .gauge-val.alert { color: var(--bad); }
 .gauge-val.ok { color: var(--ok); }
 .gauge-val.warn { color: var(--warn); }
+
+/* ── 중간 열: 공정 운영 현황 & 장비 종합 상태 (속도계 + 가로막대) ── */
+.panel-status {
+  display: flex;
+  flex-direction: column;
+}
+.eqp-status-container {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .eqp-status-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.status-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.status-dot.ok { background: #30d158; box-shadow: 0 0 8px rgba(48, 209, 88, 0.85); }
+.status-dot.auto { background: #00e5ff; box-shadow: 0 0 8px rgba(0, 229, 255, 0.85); }
+.status-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-40);
+  margin-left: auto;
+}
+
+/* 속도계 계기판 카드 */
+.speedo-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-16);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.speedo-visual-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+.speedo-svg {
+  width: 100%;
+  max-width: 290px;
+  height: auto;
+  display: block;
+}
+.speedo-digital {
+  text-align: center;
+  margin-top: -14px;
+}
+.speedo-val-row {
+  font-size: 25px;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+.speedo-val-row small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-40);
+}
+.speedo-sub-row {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+.speedo-sub-row.ok { color: var(--ok); }
+.speedo-sub-row.warn { color: var(--warn); }
+.speedo-sub-row.bad { color: var(--bad); }
+
+/* 가로 막대 그래프 카드 */
+.bars-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-16);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bar-row-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bar-row-lab {
+  color: rgba(255, 255, 255, 0.9);
+}
+.bar-row-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 12px;
+}
+.bar-row-val.ok { color: var(--ok); }
+.bar-row-val.warn { color: var(--warn); }
+.bar-row-val.crit { color: var(--bad); }
+.bar-row-val.info { color: #00e5ff; }
+
+.bar-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease-out;
+}
+.bar-fill.raw {
+  background: linear-gradient(90deg, #ff9f0a, #ff453a);
+}
+.bar-fill.auto {
+  background: linear-gradient(90deg, #30d158, #00e5ff);
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.6);
+}
+.bar-fill.man {
+  background: #ff453a;
+  box-shadow: 0 0 8px rgba(255, 69, 58, 0.6);
+}
+.bar-fill.avoid {
+  background: linear-gradient(90deg, #0a84ff, #00e5ff);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+}
+.bar-fill.dt {
+  background: #ff453a;
+}
+.bar-row-sub {
+  font-size: 11px;
+  color: var(--ink-40);
+}
 
 /* ── 하단 열: CMP 아키텍처 & 물리 거동 가이드 (3개 카드) ── */
 .about-grid {
@@ -746,7 +978,7 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   box-shadow: 0 0 8px rgba(48, 209, 88, 0.85);
 }
 
-/* ── 옵션 1 플로팅 팹 알람 관제 콘솔 (Floating Fab Console Widget) ── */
+/* ── 옵션 1 플로팅 팹 알람 관제 콘솔 (깜빡임 완전 제거) ─────── */
 .fab-console {
   position: fixed;
   right: 28px;
@@ -764,11 +996,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   z-index: 999;
   overflow: hidden;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-  animation: fab-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes fab-pop {
-  from { transform: scale(0.92) translateY(20px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
 }
 .fab-console.is-closed {
   transform: scale(0.85) translateY(40px);
@@ -795,12 +1022,7 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   height: 8px;
   border-radius: 50%;
   background: #30d158;
-  box-shadow: 0 0 10px #30d158;
-  animation: pulse-dot 1.8s infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.6; }
+  box-shadow: 0 0 8px #30d158;
 }
 .fc-title {
   font-size: 13.5px;
@@ -912,7 +1134,7 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* 본문 목록 */
+/* 본문 목록 (깜빡임 유발 애니메이션 완전 배제) */
 .fc-body {
   flex: 1;
   overflow-y: auto;
@@ -946,7 +1168,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
-/* 목록 섹션 */
 .fc-pinned-list, .fc-feed-list {
   display: flex;
   flex-direction: column;
@@ -962,7 +1183,7 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   border: 1px dashed rgba(255, 255, 255, 0.06);
 }
 
-/* 콘솔 이벤트 카드 */
+/* 콘솔 이벤트 카드 (깜빡임 제거: 애니메이션 없음, 부드러운 상태 전환만 적용) */
 .fc-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -971,12 +1192,7 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: all 0.16s ease;
-  animation: fc-slide-in 0.22s ease-out;
-}
-@keyframes fc-slide-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .fc-card:hover {
   background: rgba(255, 255, 255, 0.07);
@@ -1039,7 +1255,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
 .fc-card.warn .fc-card-res { color: var(--warn); }
 .fc-card.man .fc-card-res { color: var(--bad); }
 
-/* 콘솔 내부 단독 정지 즉시 승인/재가동 버튼 */
 .fc-action-btn {
   margin-top: 6px;
   background: #ff453a;
@@ -1061,7 +1276,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   transform: translateY(-1px);
 }
 
-/* 플로팅 런처 알약 배지 버튼 */
 .fab-launcher {
   position: fixed;
   right: 28px;
@@ -1102,7 +1316,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
 .fab-launcher.has-crit .fab-launcher-dot {
   background: #ff453a;
   box-shadow: 0 0 10px #ff453a;
-  animation: pulse-dot 1.2s infinite;
 }
 .fab-launcher-title {
   font-size: 13px;
@@ -1129,8 +1342,6 @@ html, body, p, h1, h2, h3, h4, h5, h6, .sub, .para, .hint, .row, .brief-box, .kp
   .clock { order: -1; }
   .crumb span:first-child, .crumb .sep { display: none; }
   #daybadge { display: none; }
-  .kpi-row { grid-template-columns: 1fr 1fr; }
-  .kpi-val { font-size: 20px; }
   .hero h1 { font-size: 21px; line-height: 30px; }
   .track { order: 9; flex-basis: 100%; }
   .fab-console {
