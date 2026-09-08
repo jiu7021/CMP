@@ -44,13 +44,14 @@
 :root[data-theme="dark"]{
   --ink:rgb(255,255,255); --ink-80:rgba(255,255,255,.82); --ink-40:rgba(255,255,255,.6);
   --ink-20:rgba(255,255,255,.3); --ink-10:rgba(255,255,255,.1); --ink-05:rgba(255,255,255,.1);
-  --surface-page:rgb(51,51,51);
-  --surface-app:rgb(40,40,40);
-  --surface-panel:rgba(255,255,255,.04);
-  --surface-sunken:rgba(255,255,255,.04);
-  --surface-hover:rgba(255,255,255,.1);
-  --surface-selected:rgba(255,255,255,.1);
-  --line:rgba(255,255,255,.15);
+  --surface-page:#1a1a1e;
+  --surface-app:#121214;
+  --surface-panel:rgba(255,255,255,.045);
+  --surface-sunken:rgba(255,255,255,.03);
+  --surface-hover:rgba(255,255,255,.08);
+  --surface-selected:rgba(255,255,255,.12);
+  --line:rgba(255,255,255,.09);
+  --fill-cyan:#e3f5ff;
   --text-inverse:rgb(28,28,28);
   /* SnowUI 는 다크에서도 이 파스텔 면들을 밝게 유지한다 */
   --fill-lilac:rgb(231,235,245); --fill-purple:rgb(231,231,238);

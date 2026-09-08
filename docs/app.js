@@ -27,7 +27,7 @@ loadColors();
 const SPEED = { 1: 1800, 5: 350, 20: 90, 50: 35 };
 const STEP_MIN = 6;
 
-let day = 0, eqp = 0, logv = 'all'; // Default to 'all' for unified view
+let day = 0, eqp = 0, logv = 'all';
 let cur = 99, playing = false, speed = 20, timer = null;
 let queue = [], saved = null;
 let live = {}, dIdx = {}, halt = {}, alarmAt = {}, replaced = {}, replaceIdx = {};
@@ -56,7 +56,7 @@ function stepLive(k) {
   S[day].equipments.forEach(e => {
     const L = live[e.id], s = e.series, n = L.mrr_act.length;
     if (halt[e.id]) {
-      // 해당 챔버만 정지! 구동 파라미터 소멸, 마모 진행 정지
+      // 챔버 단독 정지: 모터 RPM 및 압력 0, 마모 누적 정지
       const prev_temp = n ? L.temp[n - 1] : 34.0;
       L.mrr_act.push(0);
       L.mrr_pred.push(0);
@@ -69,7 +69,7 @@ function stepLive(k) {
       L.rul.push(n ? L.rul[n - 1] : 0);
       L.halt.push(1);
     } else {
-      // 챔버 정상 가동: 레시피 파라미터 소비
+      // 챔버 정상 가동
       const i = Math.min(++dIdx[e.id], s.t.length - 1);
       L.press.push(s.press[i]);
       L.flow.push(s.flow[i]);
@@ -78,7 +78,7 @@ function stepLive(k) {
       L.curr.push(s.curr[i]);
 
       if (replaced[e.id]) {
-        // 소모품 교체 후: 새 패드(1200um)에서 마모 재누적
+        // 패드 교체 후: 신품 1200um 기준 재누적
         const past = i - replaceIdx[e.id];
         const new_wear = Math.max(1200.0 - past * 1.6, 400.0);
         L.wear.push(+new_wear.toFixed(1));
@@ -108,13 +108,13 @@ function fillAll() {
 
 const haltSteps = () => S[day].equipments.reduce((tot, e) => tot + (live[e.id] ? live[e.id].halt.reduce((x, y) => x + y, 0) : 0), 0);
 
-// ── SVG 차트 (Y축 스케일 최적화 & 일자 방지) ───────────────────
+// ── SVG 차트 (Y축 스케일 최적화 & 일자 뭉개짐 해결) ─────────────
 const W = 760, H = 88, PL = 46, PR = 10, PT = 8, PB = 15;
 
 function chart({ label, unit, series, limits = [], marks = [], fills = [], base, minSpread, clampFloor }) {
   const n = series[0].t.length, c = cur;
   
-  // 정지(0)를 제외한 유효 가동 값으로 Y축 범위 계산 -> 1자 왜곡 완전 방지!
+  // 정지(0)를 제외한 유효 가동 값으로 Y축 범위 계산 -> 1자 뭉개짐 원천 방지
   const nonZero = series.flatMap(s => s.v.filter(v => v > 0));
   const ref = base || (nonZero.length ? nonZero : [100]);
   let lo = Math.min(...ref), hi = Math.max(...ref);
@@ -136,8 +136,7 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
 
   const X = i => PL + i * (W - PL - PR) / (n - 1);
   const Y = v => {
-    // 0값(정지)은 하단 바닥선(H - PB)에 닿도록 클램핑
-    if (v <= 0) return H - PB;
+    if (v <= 0) return H - PB; // 0(정지)은 차트 최하단에 안착
     const clamped = Math.min(Math.max(v, lo), hi);
     return PT + (hi - clamped) * (H - PT - PB) / (hi - lo);
   };
@@ -145,12 +144,12 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
   const line = vs => vs.slice(0, c + 1).map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
   let g = '';
 
-  // 정지 구간 음영
+  // 정지 구간 붉은 배경 음영
   fills.filter(f => f[0] <= c).forEach(f => {
     const x0 = X(f[0]), x1 = X(Math.min(f[1], c));
     g += `<rect x="${x0}" y="${PT}" width="${Math.max(x1 - x0, 1.5)}" height="${H - PT - PB}" fill="${f[2]}" opacity=".22"/>`;
   });
-  // 알람 발생 시점 세로선
+  // 알람 발생선
   marks.filter(m => m[0] <= c).forEach(m => {
     const x = X(m[0]);
     g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${m[1]}" stroke-width="1.2" opacity=".75"/>`;
@@ -161,7 +160,7 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
     g += `<line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="${l.c}" stroke-width="1" stroke-dasharray="3 3" opacity=".75"/>`
        + `<text x="${W - PR}" y="${y - 3}" fill="${l.c}" font-size="9" text-anchor="end" opacity=".9">${l.t}</text>`;
   });
-  // 데이터 곡선
+  // 센서 데이터 라인
   series.forEach(s => {
     g += `<path d="${line(s.v)}" fill="none" stroke="${s.c}" stroke-width="${s.dyn ? 1 : 1.4}"${s.dyn ? ' stroke-dasharray="4 3" opacity=".8"' : ''}/>`;
   });
@@ -240,27 +239,32 @@ function renderCharts() {
   ].join('');
 }
 
-// ── CMP 물리 거동 트윈 애니메이션 업데이트 ───────────────────
+// ── CMP 물리 거동 트윈 애니메이션 (재생 중에만 작동!) ─────────
 function renderTwin() {
   const d = S[day], e = d.equipments[eqp], L = live[e.id];
   const isHalted = halt[e.id];
+  const isRunning = playing && cur < N() - 1 && !isHalted;
+
   const card = $('#cmp-twin-card');
-  const dot = $('#twin-dot');
   const badge = $('#twin-status-badge');
   const overlay = $('#cmp-halt-overlay');
   const chName = $('#twin-ch-name');
 
   if (chName) chName.textContent = `${e.id} — ${e.type}`;
 
+  if (card) {
+    // 재생 중일 때만 .is-running 클래스 부여하여 애니메이션 작동
+    card.classList.toggle('is-running', isRunning);
+    card.classList.toggle('is-halted', isHalted);
+  }
+
   if (isHalted) {
-    if (card) card.classList.add('is-halted');
-    if (dot) { dot.classList.add('halted'); }
     if (badge) badge.innerHTML = `<span class="badge bad">🔴 단독 정지 (HALTED)</span>`;
     if (overlay) overlay.style.opacity = '1';
 
     $('#g-mrr').textContent = '0 Å/min';
     $('#g-mrr').className = 'gauge-val alert';
-    $('#g-mrr-err').textContent = '설비 정지 상태';
+    $('#g-mrr-err').textContent = '설비 단독 정지 상태';
     $('#g-press').textContent = '0.00 psi';
     $('#g-press').className = 'gauge-val alert';
     $('#g-flow').textContent = '0.0 ml/min';
@@ -269,9 +273,11 @@ function renderTwin() {
     $('#g-wear').className = 'gauge-val alert';
     $('#g-rul').textContent = '잔여 0매 (교체 대기)';
   } else {
-    if (card) card.classList.remove('is-halted');
-    if (dot) { dot.classList.remove('halted'); }
-    if (badge) badge.innerHTML = `<span class="badge ok">🟢 정상 가동 중 (RUNNING)</span>`;
+    if (badge) {
+      badge.innerHTML = isRunning
+        ? `<span class="badge ok">🟢 연마 가동 중 (RUNNING)</span>`
+        : `<span class="badge ghost">⏸ 일시정지 (PAUSED)</span>`;
+    }
     if (overlay) overlay.style.opacity = '0';
 
     const mrrP = L.mrr_pred[cur] || 2200.0;
@@ -281,9 +287,9 @@ function renderTwin() {
     const wVal = L.wear[cur] || 950.0;
     const rVal = L.rul[cur] || 320;
 
-    $('#g-mrr').textContent = `${mrrP.toFixed(1)} Å/min`;
+    $('#g-mrr').textContent = `${mrrP.toFixed(0)} Å/min`;
     $('#g-mrr').className = 'gauge-val ok';
-    $('#g-mrr-err').textContent = `실측: ${mrrA.toFixed(1)} Å/min (오차 ${(mrrP - mrrA).toFixed(1)})`;
+    $('#g-mrr-err').textContent = `실측: ${mrrA.toFixed(0)} Å/min (오차 ${(mrrP - mrrA).toFixed(1)})`;
     $('#g-press').textContent = `${pVal.toFixed(2)} psi`;
     $('#g-press').className = 'gauge-val';
     $('#g-flow').textContent = `${fVal.toFixed(1)} ml/min`;
@@ -303,7 +309,6 @@ function renderLog() {
   const alarms = seenAlarms();
   const actions = seenActions();
 
-  // 통합 이벤트 스트림 생성
   const events = [];
 
   // 자동 보정 건
@@ -322,7 +327,7 @@ function renderLog() {
     });
   });
 
-  // 사람 개입 건 (알람 및 수동 조치)
+  // 사람 개입 건 (알람 및 PM 수동 조치)
   alarms.forEach(a => {
     const act = actions.find(c => c.alarm_id === a.id);
     const dec = act ? decided[key(act)] : null;
@@ -349,7 +354,6 @@ function renderLog() {
     });
   });
 
-  // 시간순 정렬 (최신순 역순 표출)
   events.sort((x, y) => x.step - y.step);
 
   let filtered = events;
@@ -391,15 +395,18 @@ function renderKpi() {
   const prog = Math.max(...S[day].equipments.map(e => dIdx[e.id]));
   const raw = d.raw_cum[Math.max(prog, 0)];
   const hs = haltSteps();
+  const e = d.equipments[eqp];
+  const L = live[e.id];
+  const curMRR = (halt[e.id] ? 0 : (L && L.mrr_pred[cur] ? L.mrr_pred[cur] : 2204));
 
   $('#kpi').innerHTML = [
-    ['원시 센서 알람', raw, '단순 임계 초과 시점'],
-    ['근본원인 집약', vis.length + auto, vis.length ? `압축률 ${(100 - (vis.length + auto) / Math.max(raw, 1) * 100).toFixed(0)}%` : '—'],
+    ['가상계측 MRR (제거율)', `${curMRR.toFixed(0)} Å/min`, '목표 2200 Å/min (정상 제어)'],
+    ['원시 센서 임계 초과', raw, '단순 알람 누적'],
     ['R2R 자동 보정', auto, 'Preston 레시피 보정 (무중단)'],
     ['사람 조치 필요', act.length - auto, '비가역 소모품 교체 (PM)'],
-    ['회피한 라인 정지', auto, '불필요한 설비 셧다운 차단'],
-    ['정지 손실 시간', (hs * STEP_MIN) + '분', hs ? '조치 대기 중 챔버 단독 정지' : '정지 없음 (정상 가동)']
-  ].map(([k, v, sb], i) => `<div class="kpi${i === 0 ? ' tint' : i === 1 ? ' tint-2' : ''}">
+    ['회피한 라인 정지', auto, '설비 셧다운 차단 효과'],
+    ['정지 손실 시간', (hs * STEP_MIN) + '분', hs ? '조치 대기 중 챔버 단독 정지' : '정상 가동 (손실 0분)']
+  ].map(([k, v, sb], i) => `<div class="kpi${i === 0 ? ' hero-tint' : ''}">
        <div class="kpi-lab">${k}</div><div class="kpi-val">${v}</div><div class="kpi-sub">${sb}</div></div>`).join('');
 }
 
@@ -465,15 +472,26 @@ function play() {
   }
   playing = true;
   renderBar();
+  renderTwin();
   timer = setTimeout(step, SPEED[speed]);
 }
-function pause() { playing = false; clearTimeout(timer); renderBar(); }
-function stop()  { playing = false; clearTimeout(timer); renderBar(); }
+function pause() {
+  playing = false;
+  clearTimeout(timer);
+  renderBar();
+  renderTwin();
+}
+function stop() {
+  playing = false;
+  clearTimeout(timer);
+  renderBar();
+  renderTwin();
+}
 
 function paint() {
   paintTabs();
-  renderTwin();
   renderCharts();
+  renderTwin();
   renderLog();
   renderKpi();
   renderBar();
@@ -484,6 +502,13 @@ function paintTabs() {
     `<button class="${i === eqp ? 'on' : ''}${halt[e.id] ? ' halted' : ''}" data-i="${i}">${e.id}
       <em>${e.type}</em>${halt[e.id] ? '<b class="stopdot">정지</b>' : ''}</button>`).join('');
 }
+
+window.switchEqp = function(i) {
+  eqp = i;
+  paintTabs();
+  renderCharts();
+  renderTwin();
+};
 
 function render() {
   const d = S[day];
@@ -516,8 +541,8 @@ $('#eqps').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   eqp = +b.dataset.i;
   document.querySelectorAll('#eqps button').forEach((x, i) => x.classList.toggle('on', i === eqp));
-  renderTwin();
   renderCharts();
+  renderTwin();
 };
 
 $('#logtabs').onclick = e => {
