@@ -13,14 +13,15 @@
 <body>
 <div class="shell">
 
+<!-- 좌측 네비게이션 레일 -->
 <aside class="rail">
   <div class="rail-brand"><span class="rail-dot"></span><span>CMP Studio</span></div>
 
   <div class="rail-sec">대시보드</div>
   <nav class="rail-group">
-    <a class="rail-row on" href="#s-live"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 8V2.2M8 8l4.3 4.3"/></svg>실시간 모니터링</a>
-    <a class="rail-row" href="#s-chart"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5l3.4-4 2.6 2.4L13.8 4"/><path d="M2 2v12h12"/></svg>가상계측 · 센서 트렌드</a>
-    <a class="rail-row" href="#s-log"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 4.2h10.8M2.6 8h10.8M2.6 11.8h7"/></svg>알람 · APC 이력</a>
+    <a class="rail-row on" href="#s-twin"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 8V2.2M8 8l4.3 4.3"/></svg>3D 디지털 트윈</a>
+    <a class="rail-row" href="#s-chart"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5l3.4-4 2.6 2.4L13.8 4"/><path d="M2 2v12h12"/></svg>가상계측 · 센서 차트</a>
+    <a class="rail-row" href="#s-live"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12M7 2v12"/></svg>공정 운영 현황</a>
     <a class="rail-row" href="#s-about"><svg class="ri" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.2h5.5L13 5.6v8.2H4z"/><path d="M9.3 2.4v3.4h3.4"/></svg>설계 문서 & 읽는 법</a>
   </nav>
 
@@ -42,14 +43,15 @@
   </div>
 </aside>
 
+<!-- 우측 메인 영역 -->
 <div class="col">
   <header class="topbar">
     <div class="crumb"><span>Dashboards</span><span class="sep">/</span><b id="crumb-cur">CMP Overview</b></div>
     <div class="topbar-r">
       <span class="badge ok" title="IEEE PHM 2016 Data Challenge CMP Dataset">PHM 2016 CMP 실데이터</span>
       <span class="badge ghost" id="daybadge">—</span>
-      <button id="dock-toggle-top" class="btn dock-top-btn" title="실시간 알람 관제 독 열기/닫기">
-        <span class="dock-top-dot"></span>관제 독 <span id="dock-top-cnt">0</span>
+      <button id="dock-toggle-top" class="btn dock-top-btn" title="실시간 알람 관제창 열기/닫기">
+        <span class="dock-top-dot"></span>실시간 관제 <span id="dock-top-cnt">0</span>
       </button>
       <a class="btn primary" href="project.html">엔지니어링 리포트 →</a>
       <button id="theme-btn" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
@@ -68,238 +70,266 @@
     <nav class="daybar" id="days"></nav>
   </div>
 
-  <div class="col-body">
-    <div class="scroll">
+  <!-- 단일 부드러운 스크롤 영역 -->
+  <div class="scroll">
     <div class="hero">
       <h1>반도체 CMP 가상계측 & 알람 이원화 시뮬레이터</h1>
-      <p class="sub">PHM 2016 반도체 CMP 공정 데이터셋(3개 챔버: Ch.A, Ch.B, Ch.C)의 100매 웨이퍼 연속 가공 시계열(08:00~18:00)을 재생합니다.
-      슬러리 유량·압력 등 가역적 공정 편차는 R2R APC로 무중단 자동 보정되며, 패드·컨디셔너 등 비가역적 소모품 마모 시 <b>해당 챔버만 단독 정지</b> 후 교체 복구됩니다.
-      조업 일자를 선택하고 재생을 누르세요.</p>
+      <p class="sub">PHM 2016 반도체 CMP 실데이터 기반 100매 웨이퍼 연속 연마(08:00~18:00) 시뮬레이션입니다.
+      가역적 센서 편차(유량·압력)는 <b>R2R APC 무중단 자동 보정</b>되며, 비가역적 소모품 마모(패드 잔여홈 ≤400μm) 도달 시 <b>해당 챔버만 단독 정지</b> 후 복구됩니다.</p>
     </div>
 
-    <main>
+    <div id="hold" class="hold"></div>
 
-      <div id="hold" class="hold"></div>
+    <!-- 2열 멀티 패널 대시보드 그리드 (Mockup 1안 정합) -->
+    <main class="dashboard-grid">
 
-      <!-- 공정 현황 (KPI 카드 행) -->
-      <section class="panel" id="s-live">
-        <div class="panel-head"><h2>공정 운영 현황</h2><div class="hint" id="title"></div></div>
-        <div class="kpi-row" id="kpi"></div>
-        <div class="brief-box">
-          <span class="tag">AI 양산 브리핑</span>
-          <p id="brief"></p>
-        </div>
-      </section>
+      <!-- 좌측 열: 차트 & KPI 운영 현황 -->
+      <div class="dash-col dash-col-left">
+        <!-- 가상계측 & 센서 트렌드 -->
+        <section class="panel" id="s-chart">
+          <div class="panel-head">
+            <h2>가상계측 · 센서 트렌드 차트</h2>
+            <nav id="eqps" class="tabs sm"></nav>
+          </div>
+          <div id="charts"></div>
+          <p class="hint" style="margin-top:12px">세로선은 이상 감지 시점, 붉은 음영은 해당 챔버 단독 정지 구간입니다.
+          공정 제어 밴드(Process Window) 스케일링으로 정지 중에도 신호 거동이 유지됩니다.</p>
+        </section>
 
-      <!-- 가상계측 & 센서 트렌드 (그래프가 먼저 나옴!) -->
-      <section class="panel" id="s-chart">
-        <div class="panel-head">
-          <h2>가상계측 · 센서 트렌드 차트</h2>
-          <nav id="eqps" class="tabs sm"></nav>
-        </div>
+        <!-- 공정 운영 현황 & AI 양산 브리핑 -->
+        <section class="panel" id="s-live">
+          <div class="panel-head">
+            <h2>공정 운영 현황</h2>
+            <div class="hint" id="title"></div>
+          </div>
+          <div class="kpi-row" id="kpi"></div>
+          <div class="brief-box">
+            <span class="tag">AI 양산 브리핑</span>
+            <p id="brief"></p>
+          </div>
+        </section>
+      </div>
 
-        <!-- 5종 SVG 실시간 센서 및 가상계측 차트 -->
-        <div id="charts"></div>
-        <p class="hint" style="margin-top:14px">세로선은 이상 감지 시점, 붉은 음영은 해당 챔버 단독 정지 구간입니다.
-        Y축 스케일은 실제 공정 제어 밴드(Process Window)에 맞춰 최적화되어 정지 후에도 파라미터 미세 거동이 1자로 뭉개지지 않습니다.</p>
-
-        <!-- 차트 아래에 배치된 실제 반도체 CMP 공정 구조도 & 물리 거동 트윈 -->
-        <div class="cmp-schematic-wrap">
-          <div class="cmp-schematic-head">
-            <h3>⚙️ 반도체 CMP 연마 챔버 물리 거동 단면도 (<span id="twin-ch-name">Ch.A (Chamber 1)</span>)</h3>
-            <div id="twin-status-badge"><span class="badge ok">🟢 정상 가동 중 (RUNNING)</span></div>
+      <!-- 우측 열: 3D 디지털 트윈 & 실시간 텔레메트리 게이지 -->
+      <div class="dash-col dash-col-right">
+        <section class="panel panel-twin" id="s-twin">
+          <div class="panel-head">
+            <h2>⚙️ 반도체 CMP 3D 디지털 트윈 (<span id="twin-ch-name">Ch.A</span>)</h2>
+            <div id="twin-status-badge"><span class="badge ok">🟢 정상 가동 중</span></div>
           </div>
 
           <div class="cmp-twin-card" id="cmp-twin-card">
-            <div class="cmp-twin-body">
-              <!-- 실제 반도체 CMP 설비 단면 구조도 (Carrier Head, 300mm Wafer, Retaining Ring, Slurry, Pad, Platen) -->
-              <div class="cmp-stage-view">
-                <svg id="cmp-svg-sim" viewBox="0 0 680 240" class="cmp-svg">
-                  <defs>
-                    <!-- Polyurethane Pad Textured Pattern -->
-                    <linearGradient id="pad-base-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#d4a373"/>
-                      <stop offset="50%" stop-color="#bc6c25"/>
-                      <stop offset="100%" stop-color="#8a4f1d"/>
-                    </linearGradient>
-                    <!-- Silicon Wafer Thin Film Gradient -->
-                    <linearGradient id="wafer-layer-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#48cae4"/>
-                      <stop offset="25%" stop-color="#0077b6"/>
-                      <stop offset="50%" stop-color="#90e0ef"/>
-                      <stop offset="75%" stop-color="#b5179e"/>
-                      <stop offset="100%" stop-color="#48cae4"/>
-                    </linearGradient>
-                    <!-- Slurry Fluid Drop Gradient -->
-                    <radialGradient id="slurry-fluid-grad" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stop-color="#caf0f8"/>
-                      <stop offset="100%" stop-color="#00b4d8"/>
-                    </radialGradient>
-                  </defs>
+            <!-- 3D 아이소메트릭 연마 챔버 시각화 -->
+            <div class="cmp-3d-viewport">
+              <svg id="cmp-3d-sim" viewBox="0 0 540 370" class="cmp-3d-svg">
+                <defs>
+                  <radialGradient id="platen-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#2e2e34"/>
+                    <stop offset="80%" stop-color="#1c1c20"/>
+                    <stop offset="100%" stop-color="#121215"/>
+                  </radialGradient>
+                  <radialGradient id="pad-grad" cx="45%" cy="40%" r="55%">
+                    <stop offset="0%" stop-color="#d4a373"/>
+                    <stop offset="65%" stop-color="#bc6c25"/>
+                    <stop offset="100%" stop-color="#783d0f"/>
+                  </radialGradient>
+                  <linearGradient id="platen-side-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#3e3e46"/>
+                    <stop offset="50%" stop-color="#25252b"/>
+                    <stop offset="100%" stop-color="#141418"/>
+                  </linearGradient>
+                  <linearGradient id="metal-col-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#2c2c32"/>
+                    <stop offset="35%" stop-color="#4e4e58"/>
+                    <stop offset="70%" stop-color="#34343c"/>
+                    <stop offset="100%" stop-color="#1e1e24"/>
+                  </linearGradient>
+                  <linearGradient id="wafer-sheen-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00b4d8"/>
+                    <stop offset="35%" stop-color="#90e0ef"/>
+                    <stop offset="70%" stop-color="#7209b7"/>
+                    <stop offset="100%" stop-color="#0077b6"/>
+                  </linearGradient>
+                  <radialGradient id="slurry-drop-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#e0f7fa"/>
+                    <stop offset="60%" stop-color="#00e5ff"/>
+                    <stop offset="100%" stop-color="#0097a7"/>
+                  </radialGradient>
+                </defs>
 
-                  <!-- 1. Bottom Turntable Platen & Polyurethane Pad -->
-                  <g id="platen-assembly">
-                    <!-- Stainless Platen Base -->
-                    <rect x="60" y="195" width="560" height="24" rx="4" fill="#2c2c2e" stroke="#48484a" stroke-width="1.5"/>
-                    <rect x="290" y="219" width="100" height="15" fill="#1c1c1e"/>
-                    <!-- Polishing Pad (IC1000) -->
-                    <rect x="70" y="175" width="540" height="20" rx="2" fill="url(#pad-base-grad)" stroke="#dda15e" stroke-width="1"/>
-                    <!-- Pad Micro-Grooves cross-hatch lines -->
-                    <path d="M80,175 L80,183 M110,175 L110,183 M140,175 L140,183 M170,175 L170,183 M200,175 L200,183 M230,175 L230,183 M260,175 L260,183 M290,175 L290,183 M320,175 L320,183 M350,175 L350,183 M380,175 L380,183 M410,175 L410,183 M440,175 L440,183 M470,175 L470,183 M500,175 L500,183 M530,175 L530,183 M560,175 L560,183 M590,175 L590,183" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
-                    <!-- Platen Rotation Indicator Arrow -->
-                    <g id="platen-rotation-badge" class="spin-anim">
-                      <circle cx="220" cy="170" r="16" fill="rgba(0,0,0,0.4)" stroke="#dda15e" stroke-width="1"/>
-                      <path d="M213,170 A7,7 0 1,1 227,170 M227,165 L227,171 L221,171" fill="none" stroke="#dda15e" stroke-width="1.5" stroke-linecap="round"/>
-                    </g>
-                    <text x="340" y="210" fill="#a1a1a6" font-size="11" font-weight="600" text-anchor="middle">ROTATING PLATEN TABLE & IC1000 POLYURETHANE PAD</text>
+                <!-- 하부 섀도우 -->
+                <ellipse cx="270" cy="280" rx="210" ry="72" fill="rgba(0,0,0,0.65)" filter="blur(10px)"/>
+
+                <!-- 1. 플래튼 원통 측면 압출 -->
+                <path d="M75,235 C75,278 465,278 465,235 L465,260 C465,303 75,303 75,260 Z" fill="url(#platen-side-grad)" stroke="#3a3a42" stroke-width="1.2"/>
+
+                <!-- 2. 플래튼 상부 림 -->
+                <ellipse cx="270" cy="235" rx="195" ry="68" fill="url(#platen-grad)" stroke="#4e4e58" stroke-width="2"/>
+
+                <!-- 3. IC1000 폴리우레탄 패드 -->
+                <ellipse cx="270" cy="232" rx="180" ry="60" fill="url(#pad-grad)" stroke="#92400e" stroke-width="1.5"/>
+
+                <!-- 패드 동심원 미세 그루브 -->
+                <ellipse cx="270" cy="232" rx="160" ry="53" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1.5"/>
+                <ellipse cx="270" cy="232" rx="135" ry="45" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1.5"/>
+                <ellipse cx="270" cy="232" rx="105" ry="35" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1.5"/>
+                <ellipse cx="270" cy="232" rx="75" ry="25" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1.5"/>
+
+                <!-- 플래튼 회전 궤적 벡터 (Cyan Dashed Halo) -->
+                <ellipse cx="270" cy="232" rx="150" ry="50" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-dasharray="14 10" class="iso-spin-anim" opacity="0.85"/>
+
+                <!-- 플래튼 회전 콜아웃 -->
+                <g transform="translate(130, 240)">
+                  <circle cx="0" cy="0" r="14" fill="rgba(20,20,24,0.88)" stroke="#00e5ff" stroke-width="1.5"/>
+                  <path d="M-6,0 A6,6 0 1,1 6,0 M6,-4 L6,0 L2,0" fill="none" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round"/>
+                </g>
+
+                <!-- 4. 슬러리 공급 디스펜서 노즐 & 액적 드랍 -->
+                <g id="slurry-nozzle-arm">
+                  <path d="M40,110 L155,110 L165,160" fill="none" stroke="url(#metal-col-grad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M40,110 L155,110 L165,160" fill="none" stroke="#00b4d8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="157" y="158" width="16" height="12" rx="3" fill="#00e5ff" stroke="#0077b6" stroke-width="1"/>
+                  <!-- 낙하 액적 -->
+                  <g class="iso-drip-anim" transform="translate(165, 172)">
+                    <ellipse cx="0" cy="0" rx="3.5" ry="5.5" fill="url(#slurry-drop-grad)"/>
                   </g>
+                  <!-- 패드 위 슬러리 박막 -->
+                  <ellipse cx="175" cy="236" rx="30" ry="10" fill="#00e5ff" opacity="0.35" filter="blur(1px)"/>
+                </g>
 
-                  <!-- 2. Slurry Delivery Arm & Chemical Fluid Layer (Left) -->
-                  <g id="slurry-delivery-system">
-                    <!-- Delivery tube -->
-                    <path d="M90,30 L90,105 L150,125" fill="none" stroke="#0077b6" stroke-width="5" stroke-linecap="round"/>
-                    <circle cx="150" cy="125" r="5" fill="#00b4d8"/>
-                    <text x="90" y="22" fill="#00b4d8" font-size="10.5" font-weight="600">SLURRY DISPENSER</text>
-                    
-                    <!-- Dynamic Slurry Droplets (Animated when playing) -->
-                    <circle class="drip-anim-1" cx="150" cy="138" r="3.5" fill="url(#slurry-fluid-grad)"/>
-                    <circle class="drip-anim-2" cx="152" cy="150" r="2.8" fill="url(#slurry-fluid-grad)"/>
-                    <!-- Slurry film on pad -->
-                    <rect x="140" y="172" width="220" height="3" fill="#00b4d8" opacity="0.6"/>
+                <!-- 5. 다이아몬드 컨디셔너 드레서 유닛 -->
+                <g id="conditioner-arm-assembly" class="iso-sweep-anim">
+                  <path d="M495,110 L395,140 L395,190" fill="none" stroke="url(#metal-col-grad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M495,110 L395,140 L395,190" fill="none" stroke="#ffd166" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="382" y="180" width="26" height="20" rx="4" fill="#2c2c32" stroke="#ffd166" stroke-width="1.5"/>
+                  <ellipse cx="395" cy="208" rx="28" ry="9" fill="#ffd166" stroke="#b58308" stroke-width="1.5"/>
+                  <ellipse cx="395" cy="207" rx="24" ry="7" fill="#b58308" opacity="0.6"/>
+                </g>
+
+                <!-- 6. 캐리어 로봇 헤드 & 300mm 웨이퍼 -->
+                <g id="carrier-head-group" class="iso-head-anim">
+                  <rect x="235" y="25" width="70" height="110" rx="10" fill="url(#metal-col-grad)" stroke="#52525c" stroke-width="2"/>
+                  <rect x="264" y="35" width="12" height="40" rx="3" fill="#00e5ff" opacity="0.8" filter="blur(0.5px)"/>
+                  <!-- 유압 피스톤 로드 -->
+                  <rect x="247" y="132" width="10" height="35" rx="2" fill="#71717a" stroke="#3f3f46" stroke-width="1"/>
+                  <rect x="283" y="132" width="10" height="35" rx="2" fill="#71717a" stroke="#3f3f46" stroke-width="1"/>
+                  <!-- 캐리어 척 몸체 -->
+                  <path d="M205,170 C205,188 335,188 335,170 L335,184 C335,202 205,202 205,184 Z" fill="#27272a" stroke="#52525c" stroke-width="1.5"/>
+                  <ellipse cx="270" cy="170" rx="65" ry="22" fill="url(#metal-col-grad)" stroke="#71717a" stroke-width="2"/>
+                  <!-- 리테이너 링 -->
+                  <ellipse cx="270" cy="186" rx="64" ry="21" fill="none" stroke="#e4e4e7" stroke-width="4"/>
+                  <!-- 300mm 실리콘 웨이퍼 -->
+                  <ellipse cx="270" cy="187" rx="58" ry="19" fill="url(#wafer-sheen-grad)" stroke="#00e5ff" stroke-width="1.5"/>
+                  <!-- 다운포스 압력 벡터 화살표 (Fz) -->
+                  <g stroke="#30d158" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M245,152 L245,164 M241,160 L245,165 L249,160"/>
+                    <path d="M270,152 L270,164 M266,160 L270,165 L274,160"/>
+                    <path d="M295,152 L295,164 M291,160 L295,165 L299,160"/>
                   </g>
+                </g>
 
-                  <!-- 3. Wafer Polishing Head / Carrier Assembly (Center-Right) -->
-                  <g id="carrier-assembly">
-                    <!-- Carrier Drive Shaft -->
-                    <rect x="335" y="10" width="30" height="60" rx="3" fill="#3a3a3c" stroke="#636366" stroke-width="1"/>
-                    <line x1="350" y1="20" x2="350" y2="60" stroke="#8e8e93" stroke-dasharray="3 3"/>
-                    
-                    <!-- Downforce Pressure Arrows (Fz) -->
-                    <path d="M320,45 L320,62 M316,58 L320,63 L324,58" stroke="#30d158" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M350,45 L350,62 M346,58 L350,63 L354,58" stroke="#30d158" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M380,45 L380,62 M376,58 L380,63 L384,58" stroke="#30d158" stroke-width="2" stroke-linecap="round"/>
-                    <text x="350" y="40" fill="#30d158" font-size="10" font-weight="700" text-anchor="middle">DOWNFORCE (P)</text>
+                <!-- 7. 홀로그래픽 실시간 텔레메트리 HUD 배지 -->
+                <!-- 압력 HUD -->
+                <g transform="translate(345, 125)">
+                  <line x1="-15" y1="35" x2="0" y2="0" stroke="#30d158" stroke-width="1.2" stroke-dasharray="2 2"/>
+                  <rect x="0" y="-12" width="138" height="24" rx="6" fill="rgba(18,18,22,0.92)" stroke="#30d158" stroke-width="1.2"/>
+                  <circle cx="10" cy="0" r="4" fill="#30d158"/>
+                  <text x="20" y="4" fill="#fff" font-size="10.5" font-weight="700">압력: <tspan id="hud-3d-press">3.80 psi</tspan></text>
+                </g>
 
-                    <!-- Carrier Head Main Body (Multi-Zone Air Bladder Housing) -->
-                    <rect x="250" y="70" width="200" height="85" rx="8" fill="#2c2c2e" stroke="#5a5a5e" stroke-width="2"/>
-                    <rect x="255" y="140" width="190" height="15" fill="#3a3a3c"/>
-                    
-                    <!-- Retaining Ring (Edge Ring preventing wafer slip) -->
-                    <rect x="250" y="155" width="12" height="19" rx="1" fill="#ff9f0a" stroke="#cca000" stroke-width="1"/>
-                    <rect x="438" y="155" width="12" height="19" rx="1" fill="#ff9f0a" stroke="#cca000" stroke-width="1"/>
-                    <text x="235" y="162" fill="#ff9f0a" font-size="9" font-weight="600" text-anchor="end">RETAINING RING</text>
+                <!-- 슬러리 유량 HUD -->
+                <g transform="translate(45, 170)">
+                  <line x1="120" y1="-10" x2="140" y2="10" stroke="#00e5ff" stroke-width="1.2" stroke-dasharray="2 2"/>
+                  <rect x="0" y="0" width="142" height="24" rx="6" fill="rgba(18,18,22,0.92)" stroke="#00e5ff" stroke-width="1.2"/>
+                  <circle cx="10" cy="12" r="4" fill="#00e5ff"/>
+                  <text x="20" y="16" fill="#fff" font-size="10.5" font-weight="700">유량: <tspan id="hud-3d-flow">220.0 ml/min</tspan></text>
+                </g>
 
-                    <!-- 300mm Silicon Wafer (Held Face-Down against Pad) -->
-                    <rect x="262" y="168" width="176" height="5.5" rx="1" fill="url(#wafer-layer-grad)"/>
-                    <text x="350" y="163" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">300mm WAFER (FACE-DOWN)</text>
+                <!-- 플래튼 회전수 HUD -->
+                <g transform="translate(55, 305)">
+                  <line x1="130" y1="-30" x2="90" y2="0" stroke="#00e5ff" stroke-width="1.2" stroke-dasharray="2 2"/>
+                  <rect x="0" y="0" width="132" height="24" rx="6" fill="rgba(18,18,22,0.92)" stroke="#4a4a52" stroke-width="1.2"/>
+                  <circle cx="10" cy="12" r="4" fill="#00e5ff"/>
+                  <text x="20" y="16" fill="#fff" font-size="10.5" font-weight="700">플래튼: <tspan id="hud-3d-rpm">92.0 RPM</tspan></text>
+                </g>
 
-                    <!-- Carrier Rotation Indicator Arrow -->
-                    <g id="carrier-rotation-badge" class="spin-anim-rev">
-                      <circle cx="320" cy="105" r="14" fill="rgba(0,0,0,0.5)" stroke="#0a84ff" stroke-width="1"/>
-                      <path d="M314,105 A6,6 0 1,1 326,105 M326,101 L326,106 L321,106" fill="none" stroke="#0a84ff" stroke-width="1.5" stroke-linecap="round"/>
-                    </g>
-                    <text x="350" y="109" fill="#0a84ff" font-size="10.5" font-weight="600">CARRIER HEAD</text>
-                  </g>
+                <!-- 다이아몬드 드레서 HUD -->
+                <g transform="translate(365, 275)">
+                  <line x1="30" y1="-45" x2="10" y2="0" stroke="#ffd166" stroke-width="1.2" stroke-dasharray="2 2"/>
+                  <rect x="0" y="0" width="145" height="24" rx="6" fill="rgba(18,18,22,0.92)" stroke="#ffd166" stroke-width="1.2"/>
+                  <circle cx="10" cy="12" r="4" fill="#ffd166"/>
+                  <text x="20" y="16" fill="#fff" font-size="10.5" font-weight="700">드레서: <tspan id="hud-3d-dresser">100.0 RPM</tspan></text>
+                </g>
 
-                  <!-- 4. Diamond Conditioner Dresser Unit (Far Right) -->
-                  <!-- Vertical Fixed Pivot Post at X=560 -->
-                  <rect x="560" y="30" width="10" height="155" rx="3" fill="#2c2c2e" stroke="#48484a" stroke-width="1.5"/>
-                  <circle cx="565" cy="65" r="7" fill="#636366" stroke="#8e8e93" stroke-width="1"/>
-                  <text x="565" y="22" fill="#ffd60a" font-size="10" font-weight="700" text-anchor="middle">DIAMOND DRESSER</text>
-                  <text x="565" y="198" fill="#8e8e93" font-size="8.5" text-anchor="middle">PIVOT POST</text>
+                <!-- 8. 단독 정지 비상 오버레이 -->
+                <g id="cmp-3d-halt-overlay" opacity="0" style="transition: opacity 0.3s ease;">
+                  <rect x="35" y="20" width="470" height="320" rx="14" fill="rgba(255,69,58,0.22)" stroke="#ff453a" stroke-width="2"/>
+                  <rect x="120" y="145" width="300" height="60" rx="10" fill="rgba(18,18,22,0.96)" stroke="#ff453a" stroke-width="2"/>
+                  <text x="270" y="172" fill="#ff453a" font-size="15" font-weight="800" text-anchor="middle">⚠️ 챔버 단독 정지 (HALTED)</text>
+                  <text x="270" y="192" fill="rgba(255,255,255,0.9)" font-size="12" font-weight="600" text-anchor="middle">헤드 상승(Head-Up) · 패드 교체 필요</text>
+                </g>
+              </svg>
+            </div>
 
-                  <!-- Moving Sweeper Arm & Conditioning Disc (sweeps strictly along pad surface Y=175) -->
-                  <g id="conditioner-unit" class="sweep-anim">
-                    <!-- Cantilever Arm -->
-                    <path d="M565,65 L495,65 L495,158" fill="none" stroke="#8e8e93" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- Disc Drive Spindle -->
-                    <rect x="491" y="145" width="8" height="15" rx="1" fill="#636366"/>
-                    <!-- Conditioner Disc Head Body -->
-                    <rect x="472" y="158" width="46" height="13" rx="2" fill="#3a3a3c" stroke="#ffd60a" stroke-width="1.2"/>
-                    <!-- Diamond Grit Abrasive Layer (Sits strictly on pad top surface Y=171~175) -->
-                    <rect x="474" y="171" width="42" height="4" rx="1" fill="#ffd60a" stroke="#cca000" stroke-width="0.5"/>
-                    <text x="495" y="152" fill="#ffd60a" font-size="9" font-weight="600" text-anchor="middle">100 RPM</text>
-                  </g>
-
-                  <!-- 5. Halt Alert Overlay (Displayed only when halted) -->
-                  <g id="cmp-halt-overlay" opacity="0" style="transition: opacity 0.25s ease;">
-                    <rect x="50" y="20" width="580" height="195" rx="10" fill="rgba(255,69,58,0.22)" stroke="#ff453a" stroke-width="2"/>
-                    <rect x="190" y="90" width="300" height="52" rx="8" fill="rgba(20,20,22,0.94)" stroke="#ff453a" stroke-width="1.5"/>
-                    <text x="340" y="113" fill="#ff453a" font-size="14" font-weight="700" text-anchor="middle">⚠️ 챔버 단독 정지 (HALTED)</text>
-                    <text x="340" y="131" fill="rgba(255,255,255,0.85)" font-size="11.5" text-anchor="middle">헤드 상승(Head-Up) · 소모품(패드) 교체 필요</text>
-                  </g>
-                </svg>
+            <!-- 실시간 챔버 센서 4대 게이지 -->
+            <div class="cmp-gauges-grid">
+              <div class="gauge-card">
+                <div class="gauge-lab">가상계측 MRR (제거율)</div>
+                <div class="gauge-val ok" id="g-mrr">2,204 Å/min</div>
+                <div class="gauge-sub" id="g-mrr-err">실시간 가상계측 정상</div>
               </div>
-
-              <!-- Live Chamber Gauges -->
-              <div class="cmp-gauges-grid">
-                <div class="gauge-card">
-                  <div class="gauge-lab">가상계측 MRR (제거율)</div>
-                  <div class="gauge-val ok" id="g-mrr">2,204 Å/min</div>
-                  <div class="gauge-sub" id="g-mrr-err">실시간 가상계측 정상</div>
-                </div>
-                <div class="gauge-card">
-                  <div class="gauge-lab">캐리어 다운포스 압력</div>
-                  <div class="gauge-val" id="g-press">3.80 psi</div>
-                  <div class="gauge-sub">목표: 3.80 psi (R2R 연동)</div>
-                </div>
-                <div class="gauge-card">
-                  <div class="gauge-lab">슬러리 공급 유량</div>
-                  <div class="gauge-val" id="g-flow">220.0 ml/min</div>
-                  <div class="gauge-sub">공급 밸브 안정</div>
-                </div>
-                <div class="gauge-card">
-                  <div class="gauge-lab">패드 잔여 홈 & RUL</div>
-                  <div class="gauge-val warn" id="g-wear">980.0 μm</div>
-                  <div class="gauge-sub" id="g-rul">잔여 351매 (임계 400μm)</div>
-                </div>
+              <div class="gauge-card">
+                <div class="gauge-lab">캐리어 다운포스 압력</div>
+                <div class="gauge-val" id="g-press">3.80 psi</div>
+                <div class="gauge-sub">목표: 3.80 psi (R2R 연동)</div>
+              </div>
+              <div class="gauge-card">
+                <div class="gauge-lab">슬러리 공급 유량</div>
+                <div class="gauge-val" id="g-flow">220.0 ml/min</div>
+                <div class="gauge-sub">공급 밸브 안정 제어</div>
+              </div>
+              <div class="gauge-card">
+                <div class="gauge-lab">패드 잔여 홈 & RUL</div>
+                <div class="gauge-val warn" id="g-wear">980.0 μm</div>
+                <div class="gauge-sub" id="g-rul">잔여 351매 (임계 400μm)</div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <!-- 알람 & 조치 이력 (통합 뷰) -->
-      <section class="panel" id="s-log">
-        <div class="panel-head"><h2>알람 · 조치 종합 이력</h2>
-          <nav id="logtabs" class="tabs sm">
-            <button class="on" data-v="all">전체 이력 <span id="nall"></span></button>
-            <button data-v="auto">⚡ 자동 보정 (APC) <span id="nauto"></span></button>
-            <button data-v="warn">🟡 사전 예보 (PM) <span id="nwarn"></span></button>
-            <button data-v="man">🔴 사람 조치 (정지·PM) <span id="nman"></span></button>
-          </nav></div>
-        <div id="log"></div>
-      </section>
+      <!-- 하단 전체 열: CMP 아키텍처 & 물리 거동 가이드 (3개 카드) -->
+      <div class="dash-col-full">
+        <section class="panel" id="s-about">
+          <div class="panel-head">
+            <h2>CMP 공정 운영 아키텍처 & 물리 거동 가이드</h2>
+            <div class="hint">상세 공학적 수치와 한계는 <a class="inline-link" href="project.html">엔지니어링 리포트</a>에 수록되어 있습니다</div>
+          </div>
 
-      <!-- 이 화면 읽는 법 -->
-      <section class="panel" id="s-about">
-        <div class="panel-head"><h2>이 화면 읽는 법 — CMP 공정 운영 아키텍처</h2>
-          <div class="hint">자세한 공학적 수치와 한계는 <a class="inline-link" href="project.html">엔지니어링 리포트</a>에 정리되어 있습니다</div></div>
+          <div class="about-grid">
+            <div class="about-card">
+              <div class="about-icon">🔬</div>
+              <h3>가상계측(Virtual Metrology) 원리</h3>
+              <p>CMP는 회전하는 패드와 슬러리 화학 반응으로 웨이퍼 표면을 나노 단위로 평탄화하는 전공정 핵심입니다.
+              웨이퍼 전수를 물리 계측하면 팹 병목이 발생하므로, 압력·회전수·유량·마찰전류 등 설비 센서를 학습한 <b>머신러닝 가상계측 모델(MLP)</b>로 매 웨이퍼의 연마 제거율(MRR)을 실시간 추정합니다.</p>
+            </div>
 
-        <h3 class="sub-h">가상계측(Virtual Metrology)이란 무엇인가</h3>
-        <p class="para">CMP(Chemical Mechanical Planarization)는 회전하는 폴리싱 패드와 슬러리(연마액) 화학 반응으로 웨이퍼 표면을 나노미터 수준으로 평탄화하는 전공정 핵심 공정입니다.
-        핵심 품질 지표는 <b>MRR(Material Removal Rate, 단위 시간당 연마 제거율)</b>입니다.
-        모든 웨이퍼를 물리 계측기(박막 두께 측정기)로 실측하면 팹 병목이 발생하므로,
-        설비 센서(다운포스 압력, 플래튼/헤드 회전수, 슬러리 유량, 모터 마찰전류, 패드 온도) 데이터를 학습한 <b>머신러닝 가상계측 모델(MLP/Ridge)</b>로 매 웨이퍼의 MRR을 실시간 추정합니다.</p>
+            <div class="about-card">
+              <div class="about-icon">⚡</div>
+              <h3>알람 이원화: 가역적 편차 vs 소모품 마모</h3>
+              <p>사소한 유량 흔들림이나 압력 편차 등 가역적 이상은 <b>R2R APC(Run-to-Run)로 무중단 자동 보정</b>합니다.
+              반면 폴리싱 패드 잔여 홈(≤400μm) 도달이나 다이아몬드 컨디셔너 한계 등 비가역적 소모품 마모 발생 시에만 <b>해당 챔버를 단독 정지</b>시키고 교체 승인을 요청합니다.</p>
+            </div>
 
-        <h3 class="sub-h">알람 이원화의 핵심: 가역적 이상 vs 비가역적 소모품 마모</h3>
-        <p class="para">기존 팹에서는 사소한 유량 흔들림이나 압력 드리프트에도 일괄 경보가 발생하여 오퍼레이터 피로도가 극심하고 불필요한 라인 정지가 발생했습니다.
-        본 시스템은 이상의 물리적 성격을 판별해 두 갈래로 분기합니다:</p>
-        <table class="kv">
-          <tr><td><b>슬러리 유량 편차 · 캐리어 압력 세팅 드리프트 · 회전속도 편차</b></td><td class="ok">R2R APC 자동 레시피 보정 (무중단)</td></tr>
-          <tr><td><b>폴리싱 패드 수명 한계 (홈 깊이 400μm 미달) · 다이아몬드 컨디셔너 마모</b></td><td class="bad">사람 개입 알람 (해당 챔버 단독 정지)</td></tr>
-        </table>
-
-        <h3 class="sub-h">해당 챔버만 정지되고, 나머지 챔버와 조업 시간은 계속 흐릅니다</h3>
-        <p class="para">예를 들어 <b>9월 2일</b> 시나리오에서 Ch.A의 폴리싱 패드 홈 깊이가 임계선(400μm)에 도달하면,
-        <b>Ch.A만 즉시 정지(RPM 0, 압력 0, 가공 중단)</b>되고 Ch.B와 Ch.C는 정상적으로 웨이퍼를 가공합니다.
-        실제 팹 조업과 동일하게 시간은 계속 흐르며, 작업자가 결정을 미룰수록 <b>정지 손실 시간(Downtime Loss)</b>이 분 단위로 누적됩니다.
-        상단에 나타나는 <b>[소모품(패드) 교체 완료 · 재가동]</b> 버튼을 누르면 패드가 신품(1200μm)으로 교체되고 Ch.A가 즉시 양산에 복귀합니다.</p>
-
-        <h3 class="sub-h">소모품 잔여수명(RUL) 추정</h3>
-        <p class="para">패드 잔여 홈 깊이 및 컨디셔너 가동 시간의 열화 궤적을 분석하여 교체 임계점까지 남은 웨이퍼 매수와 95% 신뢰구간([CI_low, CI_high])을 실시간 제공합니다.
-        위험 수준(CRIT) 이전 단계(MAJ)에서는 라인을 세우지 않고 차기 계획 정비(PM) 일정으로 자동 이관됩니다.</p>
-      </section>
+            <div class="about-card">
+              <div class="about-icon">⏳</div>
+              <h3>챔버 단독 정지와 RUL 사전 예보</h3>
+              <p>패드 잔여 홈이 400~520μm 범위에 진입하면 라인을 세우지 않고 <b>차기 정기 PM(교대조)으로 교체를 사전 예약</b>합니다.
+              임계점(400μm) 도달 시 이상 챔버만 0 RPM으로 정지되며, 나머지 챔버는 100% 정상 가동을 유지하여 라인 전체 셧다운 손실을 차단합니다.</p>
+            </div>
+          </div>
+        </section>
+      </div>
 
     </main>
 
@@ -309,47 +339,71 @@
     </footer>
   </div> <!-- /.scroll -->
 
-  <!-- 우측 실시간 알람 관제 독 (Live Alarm Monitoring Dock) -->
-  <aside class="alarm-dock" id="alarm-dock">
-    <div class="dock-head">
-      <div class="dock-title">
-        <span class="dock-live-pulse"></span>
-        <b>실시간 알람 관제 독</b>
-        <span class="dock-count-pill" id="dock-cnt">0</span>
+  <!-- 옵션 1 플로팅 팹 알람 관제 콘솔 (Floating Fab Console Widget) -->
+  <aside class="fab-console" id="fab-console">
+    <div class="fc-head">
+      <div class="fc-title-group">
+        <span class="fc-pulse"></span>
+        <b class="fc-title">실시간 알람 관제</b>
+        <span class="fc-cnt-badge" id="fc-cnt">0</span>
       </div>
-      <button class="dock-close-btn" id="dock-close-btn" title="관제 독 접기" aria-label="관제 독 접기">✕</button>
+      <div class="fc-ctrl-group">
+        <button id="fab-min-btn" class="fc-ctrl-btn" title="최소화">—</button>
+        <button id="fab-close-btn" class="fc-ctrl-btn" title="닫기">✕</button>
+      </div>
     </div>
 
-    <!-- 실시간 3단계 HUD -->
-    <div class="dock-hud">
-      <div class="dock-hud-box auto" data-f="auto" title="R2R APC 무중단 자동보정">
-        <span class="dh-num" id="dh-auto">0</span>
-        <span class="dh-lbl">⚡ R2R 자동</span>
+    <!-- 3단계 빠른 상태 요약 HUD -->
+    <div class="fc-hud">
+      <div class="fc-hud-box crit" data-f="man" title="비가역 마모 챔버 단독 정지">
+        <b class="fc-hud-num" id="fc-crit">0</b>
+        <span class="fc-hud-lbl">🔴 설비정지</span>
       </div>
-      <div class="dock-hud-box warn" data-f="warn" title="RUL 소모품 사전예보 (PM 예약)">
-        <span class="dh-num" id="dh-warn">0</span>
-        <span class="dh-lbl">🟡 사전예보</span>
+      <div class="fc-hud-box warn" data-f="warn" title="RUL 소모품 사전예보 (PM 예약)">
+        <b class="fc-hud-num" id="fc-warn">0</b>
+        <span class="fc-hud-lbl">🟡 사전예보</span>
       </div>
-      <div class="dock-hud-box crit" data-f="man" title="비가역적 마모 챔버 단독정지">
-        <span class="dh-num" id="dh-crit">0</span>
-        <span class="dh-lbl">🔴 라인정지</span>
+      <div class="fc-hud-box auto" data-f="auto" title="R2R APC 무중단 자동 보정">
+        <b class="fc-hud-num" id="fc-auto">0</b>
+        <span class="fc-hud-lbl">⚡ R2R 자동</span>
       </div>
     </div>
 
     <!-- 필터 탭 -->
-    <div class="dock-filter-bar">
-      <button class="dtab on" data-f="all">전체</button>
-      <button class="dtab" data-f="auto">자동보정</button>
-      <button class="dtab" data-f="warn">사전예보</button>
-      <button class="dtab" data-f="man">설비정지</button>
+    <div class="fc-filter-bar">
+      <button class="fc-tab on" data-f="all">전체</button>
+      <button class="fc-tab" data-f="auto">자동보정</button>
+      <button class="fc-tab" data-f="warn">사전예보</button>
+      <button class="fc-tab" data-f="man">설비정지</button>
     </div>
 
-    <!-- 실시간 스트리밍 카드 목록 -->
-    <div class="dock-body" id="dock-log">
-      <div class="dock-empty">재생을 시작하면 실시간 알람이 여기에 스트리밍됩니다.</div>
+    <!-- 알람 목록 본문 (고우선순위 상단 고정 + 하단 실시간 자동보정 스트림) -->
+    <div class="fc-body">
+      <div class="fc-sec-header">
+        <span class="fc-sec-dot crit"></span>
+        <span class="fc-sec-title">고우선순위 관제 (PRIORITY)</span>
+      </div>
+      <div id="console-pinned" class="fc-pinned-list">
+        <div class="fc-pinned-empty">현재 긴급 정지 및 예보 없음 (정상 가동)</div>
+      </div>
+
+      <div class="fc-sec-header fc-stream-header">
+        <span class="fc-sec-dot auto"></span>
+        <span class="fc-sec-title">실시간 APC 자동보정 스트림 (STREAM)</span>
+      </div>
+      <div id="console-feed" class="fc-feed-list">
+        <div class="fc-feed-empty">재생 시 실시간 자동 보정 내역이 수신됩니다.</div>
+      </div>
     </div>
   </aside>
-</div> <!-- /.col-body -->
+
+  <!-- 플로팅 런처 알약 배지 (콘솔 최소화 시 우측 하단에 표시) -->
+  <button class="fab-launcher" id="fab-launcher" title="실시간 알람 관제창 열기">
+    <span class="fab-launcher-dot"></span>
+    <span class="fab-launcher-title">실시간 관제</span>
+    <span class="fab-launcher-badge" id="fab-badge">정상 (0)</span>
+  </button>
+
 </div> <!-- /.col -->
 </div> <!-- /.shell -->
 

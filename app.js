@@ -32,8 +32,9 @@ let cur = 99, playing = false, speed = 20, timer = null;
 let queue = [], saved = null;
 let live = {}, dIdx = {}, halt = {}, alarmAt = {}, replaced = {}, replaceIdx = {};
 let decided = {};
-const key = c => c.alarm_id + (c.esc ? '#esc' : '');
+let dockFilter = 'all';
 
+const key = c => c.alarm_id + (c.esc ? '#esc' : '');
 const N = () => S[day].equipments[0].series.t.length;
 const nowT = () => S[day].equipments[0].series.t[Math.max(cur, 0)];
 
@@ -109,12 +110,12 @@ function fillAll() {
 const haltSteps = () => S[day].equipments.reduce((tot, e) => tot + (live[e.id] ? live[e.id].halt.reduce((x, y) => x + y, 0) : 0), 0);
 
 // ── SVG 차트 (Y축 스케일 최적화 & 일자 뭉개짐 해결) ─────────────
-const W = 760, H = 88, PL = 46, PR = 10, PT = 8, PB = 15;
+const W = 760, H = 84, PL = 46, PR = 10, PT = 8, PB = 15;
 
 function chart({ label, unit, series, limits = [], marks = [], fills = [], base, minSpread, clampFloor }) {
   const n = series[0].t.length, c = cur;
   
-  // 정지(0)를 제외한 유효 가동 값으로 Y축 범위 계산 -> 1자 뭉개짐 원천 방지
+  // 정지(0)를 제외한 유효 가동 값으로 Y축 범위 계산
   const nonZero = series.flatMap(s => s.v.filter(v => v > 0));
   const ref = base || (nonZero.length ? nonZero : [100]);
   let lo = Math.min(...ref), hi = Math.max(...ref);
@@ -136,7 +137,7 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
 
   const X = i => PL + i * (W - PL - PR) / (n - 1);
   const Y = v => {
-    if (v <= 0) return H - PB; // 0(정지)은 차트 최하단에 안착
+    if (v <= 0) return H - PB;
     const clamped = Math.min(Math.max(v, lo), hi);
     return PT + (hi - clamped) * (H - PT - PB) / (hi - lo);
   };
@@ -154,49 +155,38 @@ function chart({ label, unit, series, limits = [], marks = [], fills = [], base,
     const x = X(m[0]);
     g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${m[1]}" stroke-width="1.2" opacity=".75"/>`;
   });
-  // 판정 기준선 (글자 겹침 방지 Collision Avoidance & 다크 헤일로 스트로크)
+  // 판정 기준선 (Collision Avoidance)
   const limitItems = shown.map(l => ({
     ...l,
     y: Y(l.v),
-    textY: Y(l.v) - 4,
-    textX: W - PR
-  })).sort((a, b) => a.y - b.y);
-
+    labelY: Y(l.v)
+  }));
+  limitItems.sort((a, b) => a.y - b.y);
   for (let i = 1; i < limitItems.length; i++) {
     const prev = limitItems[i - 1];
     const curr = limitItems[i];
-    const dy = curr.textY - prev.textY;
-    if (dy < 14) {
-      // 상하 간격이 14px 미만으로 겹칠 경우 지능형 분리
-      if (curr.y < H - PB - 12) {
-        // 하단 여유가 있으면 아래 기준선 글자를 선 밑으로 배치
-        curr.textY = curr.y + 11;
-        prev.textY = Math.max(PT + 8, prev.y - 4);
-      } else {
-        // 바닥 근처(예: 400 한계선)인 경우 좌우 오프셋으로 수평 분리
-        prev.textY = Math.max(PT + 8, prev.y - 4);
-        curr.textX = W - PR - 120;
-        curr.textY = curr.y - 4;
-      }
+    if (curr.labelY - prev.labelY < 13) {
+      curr.labelY = prev.labelY + 13;
     }
   }
-
   limitItems.forEach(l => {
-    g += `<line x1="${PL}" y1="${l.y}" x2="${W - PR}" y2="${l.y}" stroke="${l.c}" stroke-width="1" stroke-dasharray="3 3" opacity=".75"/>`
-       + `<text x="${l.textX}" y="${l.textY}" fill="${l.c}" font-size="9.5" font-weight="600" text-anchor="end" `
-       + `paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3.5" stroke-linejoin="round">${l.t}</text>`;
+    g += `<line x1="${PL}" y1="${l.y}" x2="${W - PR}" y2="${l.y}" stroke="${l.c}" stroke-width="0.9" stroke-dasharray="3 3" opacity=".65"/>`
+       + `<text x="${W - PR - 4}" y="${Math.min(H - PB - 2, Math.max(PT + 9, l.labelY - 2))}" fill="${l.c}" font-size="${l.s || 9.5}" font-weight="600" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3.5" stroke-linejoin="round">${l.t}</text>`;
   });
 
-  // 센서 데이터 라인
+  // 데이터 라인
   series.forEach(s => {
-    g += `<path d="${line(s.v)}" fill="none" stroke="${s.c}" stroke-width="${s.dyn ? 1 : 1.4}"${s.dyn ? ' stroke-dasharray="4 3" opacity=".8"' : ''}/>`;
+    g += `<path d="${line(s.v)}" fill="none" stroke="${s.c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
   });
 
-  // 현재 재생 커서
-  if (c < n - 1) {
-    const x = X(c);
-    g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${C.ink}" stroke-width="1" opacity=".45"/>`;
-    series.filter(s => !s.dyn).forEach(s => g += `<circle cx="${x}" cy="${Y(s.v[c])}" r="2.4" fill="${s.c}"/>`);
+  // 커서
+  if (c >= 0 && c < n) {
+    const cx = X(c);
+    g += `<line x1="${cx}" y1="${PT}" x2="${cx}" y2="${H - PB}" stroke="${C.ink}" stroke-width="1.2" opacity=".55" stroke-dasharray="2 2"/>`;
+    series.forEach(s => {
+      const cy = Y(s.v[c]);
+      g += `<circle cx="${cx}" cy="${cy}" r="3" fill="${s.c}" stroke="#121214" stroke-width="1.5"/>`;
+    });
   }
   g += `<text x="${PL - 6}" y="${Math.max(PT + 8, Y(hi) + 4)}" fill="${C.mut}" font-size="9" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3">${hi.toFixed(0)}</text>`
      + `<text x="${PL - 6}" y="${Math.min(H - PB, Y(lo))}" fill="${C.mut}" font-size="9" text-anchor="end" paint-order="stroke fill" stroke="rgba(18,18,20,0.95)" stroke-width="3">${lo.toFixed(0)}</text>`;
@@ -217,9 +207,11 @@ function renderCharts() {
   const fills = [];
   L.halt.forEach((h, i) => { if (h) fills.push([i, i + 1, C.bad]); });
 
-  $('#charts').innerHTML = [
+  const chartsEl = $('#charts');
+  if (!chartsEl) return;
+  chartsEl.innerHTML = [
     chart({
-      label: '가상계측 MRR (연마 제거율)', unit: '[Å/min] · 파란선: 가상계측 예측 | 주황선: 실측값',
+      label: '가상계측 MRR (연마 제거율)', unit: '[Å/min] · 파랑: 가상계측 | 주황: 실측',
       series: [
         { t: s.t, v: L.mrr_act, c: C.warn, name: 'MRR 실측값' },
         { t: s.t, v: L.mrr_pred, c: C.accent, name: 'VM 예측값' }
@@ -266,7 +258,7 @@ function renderCharts() {
   ].join('');
 }
 
-// ── CMP 물리 거동 트윈 애니메이션 (재생 중에만 작동!) ─────────
+// ── 3D 디지털 트윈 & 실시간 텔레메트리 HUD ───────────────────
 function renderTwin() {
   const d = S[day], e = d.equipments[eqp], L = live[e.id];
   const isHalted = halt[e.id];
@@ -274,16 +266,23 @@ function renderTwin() {
 
   const card = $('#cmp-twin-card');
   const badge = $('#twin-status-badge');
-  const overlay = $('#cmp-halt-overlay');
+  const overlay = $('#cmp-3d-halt-overlay');
   const chName = $('#twin-ch-name');
 
-  if (chName) chName.textContent = `${e.id} — ${e.type}`;
+  if (chName) chName.textContent = `${e.id} (${e.type})`;
 
   if (card) {
-    // 재생 중일 때만 .is-running 클래스 부여하여 애니메이션 작동
     card.classList.toggle('is-running', isRunning);
     card.classList.toggle('is-halted', isHalted);
   }
+
+  const pVal = L.press[cur] || 3.80;
+  const fVal = L.flow[cur] || 220.0;
+  const rValRpm = L.rpm[cur] || 92.0;
+  const mrrP = L.mrr_pred[cur] || 2200.0;
+  const mrrA = L.mrr_act[cur] || 2200.0;
+  const wVal = L.wear[cur] || 950.0;
+  const rulVal = L.rul[cur] || 320;
 
   if (isHalted) {
     if (badge) badge.innerHTML = `<span class="badge bad">🔴 단독 정지 (HALTED)</span>`;
@@ -296,9 +295,14 @@ function renderTwin() {
     $('#g-press').className = 'gauge-val alert';
     $('#g-flow').textContent = '0.0 ml/min';
     $('#g-flow').className = 'gauge-val alert';
-    $('#g-wear').textContent = `${L.wear[cur] || 400.0} μm`;
+    $('#g-wear').textContent = `${(L.wear[cur] || 400.0).toFixed(1)} μm`;
     $('#g-wear').className = 'gauge-val alert';
     $('#g-rul').textContent = '잔여 0매 (교체 대기)';
+
+    if ($('#hud-3d-press')) $('#hud-3d-press').textContent = '0.00 psi';
+    if ($('#hud-3d-flow')) $('#hud-3d-flow').textContent = '0.0 ml/min';
+    if ($('#hud-3d-rpm')) $('#hud-3d-rpm').textContent = '0.0 RPM';
+    if ($('#hud-3d-dresser')) $('#hud-3d-dresser').textContent = '0.0 RPM';
   } else {
     if (badge) {
       badge.innerHTML = isRunning
@@ -306,13 +310,6 @@ function renderTwin() {
         : `<span class="badge ghost">⏸ 일시정지 (PAUSED)</span>`;
     }
     if (overlay) overlay.style.opacity = '0';
-
-    const mrrP = L.mrr_pred[cur] || 2200.0;
-    const mrrA = L.mrr_act[cur] || 2200.0;
-    const pVal = L.press[cur] || 3.8;
-    const fVal = L.flow[cur] || 220.0;
-    const wVal = L.wear[cur] || 950.0;
-    const rVal = L.rul[cur] || 320;
 
     $('#g-mrr').textContent = `${mrrP.toFixed(0)} Å/min`;
     $('#g-mrr').className = 'gauge-val ok';
@@ -323,15 +320,18 @@ function renderTwin() {
     $('#g-flow').className = 'gauge-val';
     $('#g-wear').textContent = `${wVal.toFixed(1)} μm`;
     $('#g-wear').className = wVal <= 480 ? 'gauge-val warn' : 'gauge-val';
-    $('#g-rul').textContent = `잔여 약 ${rVal}매 (한계 400μm)`;
+    $('#g-rul').textContent = `잔여 약 ${rulVal}매 (한계 400μm)`;
+
+    if ($('#hud-3d-press')) $('#hud-3d-press').textContent = `${pVal.toFixed(2)} psi`;
+    if ($('#hud-3d-flow')) $('#hud-3d-flow').textContent = `${fVal.toFixed(1)} ml/min`;
+    if ($('#hud-3d-rpm')) $('#hud-3d-rpm').textContent = `${rValRpm.toFixed(1)} RPM`;
+    if ($('#hud-3d-dresser')) $('#hud-3d-dresser').textContent = '100.0 RPM';
   }
 }
 
-// ── 조치 이력 통합 뷰 (사람 개입 + 자동 보정 + RUL 사전예보 실시간 표출) ────────
+// ── 플로팅 팹 알람 관제 콘솔 로직 (Option 1) ─────────────────
 const seenAlarms = () => S[day].alarms.filter(a => alarmAt[a.id] !== undefined);
 const seenActions = () => S[day].actions.filter(c => dIdx[c.eqp] >= c.step);
-
-let dockFilter = 'all';
 
 function renderLog() {
   const d = S[day];
@@ -389,85 +389,103 @@ function renderLog() {
       badge: badgeText,
       badgeClass: badgeClass,
       title: `${a.ko} (${a.value})`,
-      desc: (act ? act.why : '') + (a.sub && a.sub.length ? ` [동반: ${a.sub.map(x=>x.ko).join(', ')}]` : ''),
-      result: resultText
+      desc: (act ? act.why : '') + (a.sub && a.sub.length ? ` [동반: ${a.sub.map(x => x.ko).join(', ')}]` : ''),
+      result: resultText,
+      rawAction: act
     });
   });
 
   events.sort((x, y) => x.step - y.step);
 
-  // Bottom table filtering
-  let filtered = events;
-  if (logv === 'auto') filtered = events.filter(e => e.type === 'auto');
-  if (logv === 'warn') filtered = events.filter(e => e.type === 'warn');
-  if (logv === 'man')  filtered = events.filter(e => e.type === 'man');
-
-  const rows = filtered.slice().reverse().map(ev => {
-    const tagHtml = `<span class="badge-tag ${ev.badgeClass}">${ev.badge}</span>`;
-    const pill = ev.type === 'auto'
-      ? `<span class="pill auto">무중단 실시간 보정</span>`
-      : ev.type === 'warn'
-        ? `<span class="pill warn">정기 PM 슬롯 예약</span>`
-        : ev.result.includes('대기')
-          ? `<span class="pill man">⚠️ 정지 · 승인 대기</span>`
-          : `<span class="pill auto">확인 완료</span>`;
-
-    return `<div class="row">
-      <span class="led ${ev.grade}"></span>
-      <span class="tm">${ev.time}</span>
-      <span class="t">
-        ${tagHtml} <b>${ev.title}</b> <i>${ev.eqp}</i> ${pill}
-        <p>${ev.desc}</p>
-      </span>
-      <span class="r">${ev.result}</span>
-    </div>`;
-  }).join('');
-
-  if ($('#log')) $('#log').innerHTML = rows || '<p class="empty">현재 시점까지 발생한 이력이 없습니다.</p>';
-
-  // Counts
   const nAuto = events.filter(e => e.type === 'auto').length;
   const nWarn = events.filter(e => e.type === 'warn').length;
   const nMan = events.filter(e => e.type === 'man').length;
 
-  if ($('#nall')) $('#nall').textContent = events.length;
-  if ($('#nauto')) $('#nauto').textContent = nAuto;
-  if ($('#nwarn')) $('#nwarn').textContent = nWarn;
-  if ($('#nman')) $('#nman').textContent = nMan;
-
-  // Live Dock HUD counts
-  if ($('#dh-auto')) $('#dh-auto').textContent = nAuto;
-  if ($('#dh-warn')) $('#dh-warn').textContent = nWarn;
-  if ($('#dh-crit')) $('#dh-crit').textContent = nMan;
-  if ($('#dock-cnt')) $('#dock-cnt').textContent = events.length;
+  // 빠른 HUD 카운터 갱신
+  if ($('#fc-cnt')) $('#fc-cnt').textContent = events.length;
+  if ($('#fc-auto')) $('#fc-auto').textContent = nAuto;
+  if ($('#fc-warn')) $('#fc-warn').textContent = nWarn;
+  if ($('#fc-crit')) $('#fc-crit').textContent = nMan;
   if ($('#dock-top-cnt')) $('#dock-top-cnt').textContent = events.length;
 
-  // Render Right-side Live Dock Feed
-  let dockFiltered = events;
-  if (dockFilter === 'auto') dockFiltered = events.filter(e => e.type === 'auto');
-  if (dockFilter === 'warn') dockFiltered = events.filter(e => e.type === 'warn');
-  if (dockFilter === 'man')  dockFiltered = events.filter(e => e.type === 'man');
+  // 플로팅 런처 배지 갱신
+  const launcher = $('#fab-launcher');
+  const badge = $('#fab-badge');
+  if (badge) {
+    badge.textContent = queue.length > 0 ? `🚨 정지 ${queue.length}건` : `정상 (${events.length})`;
+  }
+  if (launcher) {
+    launcher.classList.toggle('has-crit', queue.length > 0);
+  }
 
-  const dockCards = dockFiltered.slice().reverse().map(ev => {
-    return `<div class="dock-card ${ev.type}">
-      <div class="dock-card-top">
-        <span class="dock-tag ${ev.badgeClass}">${ev.badge}</span>
-        <span class="dock-time">${ev.time} · ${ev.eqp}</span>
-      </div>
-      <div class="dock-card-title">${ev.title}</div>
-      <div class="dock-card-desc">${ev.desc}</div>
-      <div class="dock-card-res">${ev.result}</div>
-    </div>`;
-  }).join('');
+  // 1. 고우선순위 상단 고정 영역 (#console-pinned)
+  const pinnedEl = $('#console-pinned');
+  if (pinnedEl) {
+    let pinnedHtml = '';
 
-  if ($('#dock-log')) {
-    $('#dock-log').innerHTML = dockCards || '<div class="dock-empty">현재 시점까지 발생한 실시간 알람이 없습니다.</div>';
+    // 긴급 정지 건 (대기 큐에 있는 경우 즉시 승인 버튼 표출)
+    if (queue.length > 0) {
+      queue.forEach(c => {
+        const a = S[day].alarms.find(x => x.id === c.alarm_id);
+        pinnedHtml += `
+          <div class="fc-card man">
+            <div class="fc-card-top">
+              <span class="fc-card-tag man">🔴 설비 단독 정지 (승인 대기)</span>
+              <span class="fc-card-time">${c.time} · ${c.eqp}</span>
+            </div>
+            <div class="fc-card-title">${c.eqp} 패드 마모 한계(≤400μm) 정지</div>
+            <div class="fc-card-desc">${c.why}</div>
+            <button class="fc-action-btn" data-k="${key(c)}" data-d="승인">소모품(패드) 교체 완료 · 즉시 재가동</button>
+          </div>`;
+      });
+    }
+
+    // 사전 예보 건 (WARN)
+    const warnEvents = events.filter(e => e.type === 'warn');
+    warnEvents.forEach(ev => {
+      pinnedHtml += `
+        <div class="fc-card warn">
+          <div class="fc-card-top">
+            <span class="fc-card-tag warn">🟡 RUL 사전 예보</span>
+            <span class="fc-card-time">${ev.time} · ${ev.eqp}</span>
+          </div>
+          <div class="fc-card-title">${ev.title}</div>
+          <div class="fc-card-desc">${ev.desc}</div>
+          <div class="fc-card-res">${ev.result}</div>
+        </div>`;
+    });
+
+    pinnedEl.innerHTML = pinnedHtml || '<div class="fc-pinned-empty">현재 긴급 정지 및 예보 없음 (정상 가동)</div>';
+  }
+
+  // 2. 실시간 피드 영역 (#console-feed)
+  const feedEl = $('#console-feed');
+  if (feedEl) {
+    let feedFiltered = events;
+    if (dockFilter === 'auto') feedFiltered = events.filter(e => e.type === 'auto');
+    if (dockFilter === 'warn') feedFiltered = events.filter(e => e.type === 'warn');
+    if (dockFilter === 'man')  feedFiltered = events.filter(e => e.type === 'man');
+
+    const feedCards = feedFiltered.slice().reverse().map(ev => {
+      return `
+        <div class="fc-card ${ev.type}">
+          <div class="fc-card-top">
+            <span class="fc-card-tag ${ev.badgeClass}">${ev.badge}</span>
+            <span class="fc-card-time">${ev.time} · ${ev.eqp}</span>
+          </div>
+          <div class="fc-card-title">${ev.title}</div>
+          <div class="fc-card-desc">${ev.desc}</div>
+          <div class="fc-card-res">${ev.result}</div>
+        </div>`;
+    }).join('');
+
+    feedEl.innerHTML = feedCards || '<div class="fc-feed-empty">선택한 조건의 실시간 알람이 없습니다.</div>';
   }
 }
 
 // ── 재생 & KPI ────────────────────────────────────────
 function renderKpi() {
-  const d = S[day], vis = seenAlarms(), act = seenActions();
+  const d = S[day], act = seenActions();
   const auto = act.filter(c => c.auto).length;
   const prog = Math.max(...S[day].equipments.map(e => dIdx[e.id]));
   const raw = d.raw_cum[Math.max(prog, 0)];
@@ -476,7 +494,9 @@ function renderKpi() {
   const L = live[e.id];
   const curMRR = (halt[e.id] ? 0 : (L && L.mrr_pred[cur] ? L.mrr_pred[cur] : 2204));
 
-  $('#kpi').innerHTML = [
+  const kpiEl = $('#kpi');
+  if (!kpiEl) return;
+  kpiEl.innerHTML = [
     ['가상계측 MRR (제거율)', `${curMRR.toFixed(0)} Å/min`, '목표 2200 Å/min (정상 제어)'],
     ['원시 센서 임계 초과', raw, '단순 알람 누적'],
     ['R2R 자동 보정', auto, 'Preston 레시피 보정 (무중단)'],
@@ -500,13 +520,15 @@ function renderBar() {
 }
 
 function renderHold() {
+  const holdEl = $('#hold');
+  if (!holdEl) return;
   if (!queue.length) {
-    $('#hold').innerHTML = '';
-    $('#hold').classList.remove('show');
+    holdEl.innerHTML = '';
+    holdEl.classList.remove('show');
     return;
   }
-  $('#hold').classList.add('show');
-  $('#hold').innerHTML = queue.map(c => {
+  holdEl.classList.add('show');
+  holdEl.innerHTML = queue.map(c => {
     const a = S[day].alarms.find(x => x.id === c.alarm_id);
     return `<div class="hold-in">
       <div class="hold-h"><span class="led CRIT"></span><b>${c.time} · ${c.eqp} — ${a ? a.ko : c.act}</b>
@@ -537,6 +559,14 @@ function step() {
     speed = 1;
     queue.push(...hits);
     renderHold();
+
+    // 단독 정지 발생 시 플로팅 콘솔 자동 팝업
+    const fc = $('#fab-console');
+    const fl = $('#fab-launcher');
+    if (fc && fc.classList.contains('is-closed')) {
+      fc.classList.remove('is-closed');
+      if (fl) fl.classList.add('is-hidden');
+    }
   }
   paint();
   timer = setTimeout(step, SPEED[speed]);
@@ -576,7 +606,9 @@ function paint() {
 
 function paintTabs() {
   const dotClasses = ['ch-a', 'ch-b', 'ch-c'];
-  $('#eqps').innerHTML = S[day].equipments.map((e, i) =>
+  const eqpsEl = $('#eqps');
+  if (!eqpsEl) return;
+  eqpsEl.innerHTML = S[day].equipments.map((e, i) =>
     `<button class="${i === eqp ? 'on' : ''}${halt[e.id] ? ' halted' : ''}" data-i="${i}" title="${e.id} (${e.type}) 모니터링">
       <span class="ch-dot ${dotClasses[i] || 'ch-a'}"></span>
       <b>${e.id}</b>
@@ -597,113 +629,150 @@ function render() {
   if (!live[d.equipments[0].id]) fillAll();
   document.querySelectorAll('#days button').forEach(b =>
     b.classList.toggle('on', +b.dataset.i === day));
-  $('#title').textContent = `${d.date} · ${d.title}`;
+  const tEl = $('#title');
+  if (tEl) tEl.textContent = `${d.date} · ${d.title}`;
   const bd = $('#daybadge');
   if (bd) bd.textContent = `${d.date.slice(5)} ${d.title}`;
-  $('#brief').textContent = d.brief;
+  const briefEl = $('#brief');
+  if (briefEl) briefEl.textContent = d.brief;
   paintTabs();
   renderHold();
   paint();
 }
 
 // ── 이벤트 리스너 ─────────────────────────────────────
-$('#days').innerHTML = S.map((d, i) =>
-  `<button data-i="${i}"><b>${d.date.slice(5)}</b><span>${d.title}</span></button>`).join('');
-$('#spd').innerHTML = [1, 5, 20, 50].map(s => `<button data-s="${s}">x${s}</button>`).join('');
+const daysEl = $('#days');
+if (daysEl) {
+  daysEl.innerHTML = S.map((d, i) =>
+    `<button data-i="${i}"><b>${d.date.slice(5)}</b><span>${d.title}</span></button>`).join('');
+  daysEl.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    stop(); day = +b.dataset.i; eqp = 0; cur = N() - 1;
+    queue = []; saved = null; decided = {};
+    fillAll(); render();
+  };
+}
 
-const pickDay = e => {
-  const b = e.target.closest('button'); if (!b) return;
-  stop(); day = +b.dataset.i; eqp = 0; cur = N() - 1;
-  queue = []; saved = null; decided = {};
-  fillAll(); render();
+const spdEl = $('#spd');
+if (spdEl) {
+  spdEl.innerHTML = [1, 5, 20, 50].map(s => `<button data-s="${s}">x${s}</button>`).join('');
+  spdEl.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    speed = +b.dataset.s; saved = null; renderBar();
+  };
+}
+
+const eqpsClickEl = $('#eqps');
+if (eqpsClickEl) {
+  eqpsClickEl.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    eqp = +b.dataset.i;
+    document.querySelectorAll('#eqps button').forEach((x, i) => x.classList.toggle('on', i === eqp));
+    renderCharts();
+    renderTwin();
+  };
+}
+
+// ── 플로팅 팹 콘솔 토글 및 조작 ──────────────────────────
+const fabConsole = $('#fab-console');
+const fabLauncher = $('#fab-launcher');
+const topDockBtn = $('#dock-toggle-top');
+
+const openConsole = () => {
+  if (fabConsole) fabConsole.classList.remove('is-closed');
+  if (fabLauncher) fabLauncher.classList.add('is-hidden');
+  localStorage.setItem('cmp_fab_closed', '0');
 };
-$('#days').onclick = pickDay;
 
-$('#eqps').onclick = e => {
-  const b = e.target.closest('button'); if (!b) return;
-  eqp = +b.dataset.i;
-  document.querySelectorAll('#eqps button').forEach((x, i) => x.classList.toggle('on', i === eqp));
-  renderCharts();
-  renderTwin();
+const closeConsole = () => {
+  if (fabConsole) fabConsole.classList.add('is-closed');
+  if (fabLauncher) fabLauncher.classList.remove('is-hidden');
+  localStorage.setItem('cmp_fab_closed', '1');
 };
 
-$('#logtabs').onclick = e => {
-  const b = e.target.closest('button'); if (!b) return;
-  logv = b.dataset.v;
-  document.querySelectorAll('#logtabs button').forEach(x => x.classList.toggle('on', x === b));
-  renderLog();
+const toggleConsole = () => {
+  if (!fabConsole) return;
+  if (fabConsole.classList.contains('is-closed')) openConsole();
+  else closeConsole();
 };
 
-// ── 실시간 알람 관제 독 이벤트 ──────────────────────────
-const toggleDock = () => {
-  const cb = document.querySelector('.col-body');
-  if (!cb) return;
-  cb.classList.toggle('dock-closed');
-  const isClosed = cb.classList.contains('dock-closed');
-  localStorage.setItem('cmp_dock_closed', isClosed ? '1' : '0');
-};
+if ($('#fab-min-btn')) $('#fab-min-btn').onclick = closeConsole;
+if ($('#fab-close-btn')) $('#fab-close-btn').onclick = closeConsole;
+if (fabLauncher) fabLauncher.onclick = openConsole;
+if (topDockBtn) topDockBtn.onclick = toggleConsole;
 
-const topDockBtn = document.querySelector('#dock-toggle-top');
-if (topDockBtn) topDockBtn.onclick = toggleDock;
-const closeDockBtn = document.querySelector('#dock-close-btn');
-if (closeDockBtn) closeDockBtn.onclick = toggleDock;
+// 초기 콘솔 상태 복원 (기본 열림)
+if (localStorage.getItem('cmp_fab_closed') === '1') {
+  closeConsole();
+} else {
+  openConsole();
+}
 
-const dfBar = document.querySelector('.dock-filter-bar');
-if (dfBar) {
-  dfBar.onclick = e => {
+// 콘솔 필터 바
+const fcFilterBar = $('.fc-filter-bar');
+if (fcFilterBar) {
+  fcFilterBar.onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     dockFilter = b.dataset.f;
-    document.querySelectorAll('.dock-filter-bar button').forEach(x => x.classList.toggle('on', x === b));
+    document.querySelectorAll('.fc-filter-bar button').forEach(x => x.classList.toggle('on', x === b));
     renderLog();
   };
 }
 
-const dHud = document.querySelector('.dock-hud');
-if (dHud) {
-  dHud.onclick = e => {
-    const box = e.target.closest('.dock-hud-box'); if (!box) return;
+// 콘솔 HUD 상단 박스 클릭 필터
+const fcHud = $('.fc-hud');
+if (fcHud) {
+  fcHud.onclick = e => {
+    const box = e.target.closest('.fc-hud-box'); if (!box) return;
     dockFilter = box.dataset.f;
-    document.querySelectorAll('.dock-filter-bar button').forEach(x => x.classList.toggle('on', x.dataset.f === dockFilter));
+    document.querySelectorAll('.fc-filter-bar button').forEach(x => x.classList.toggle('on', x.dataset.f === dockFilter));
     renderLog();
   };
 }
 
-// Restore saved dock state
-if (localStorage.getItem('cmp_dock_closed') === '1') {
-  const cb = document.querySelector('.col-body');
-  if (cb) cb.classList.add('dock-closed');
-}
+// 콘솔 상단 고정 영역 내 조치 버튼 클릭 처리 (소모품 교체 및 재가동)
+const handleActionClick = (k, d) => {
+  const c = queue.find(x => key(x) === k);
+  decided[k] = d;
 
-$('#play').onclick = () => playing ? pause() : play();
-$('#rst').onclick  = () => {
-  stop(); cur = 0; queue = []; saved = null; decided = {};
-  resetLive(); stepLive(0); paint(); renderHold();
-};
-$('#end').onclick  = () => {
-  stop(); cur = N() - 1; queue = []; saved = null; decided = {};
-  fillAll(); paint(); renderHold();
-};
-$('#spd').onclick  = e => {
-  const b = e.target.closest('button'); if (!b) return;
-  speed = +b.dataset.s; saved = null; renderBar();
-};
-
-$('#hold').onclick = e => {
-  const b = e.target.closest('button'); if (!b) return;
-  const c = queue.find(x => key(x) === b.dataset.k);
-  decided[b.dataset.k] = b.dataset.d;
-
-  if (b.dataset.d === '승인' && c) {
+  if (d === '승인' && c) {
     halt[c.eqp] = false;
     replaced[c.eqp] = true;
     replaceIdx[c.eqp] = dIdx[c.eqp];
   }
-  queue = queue.filter(x => key(x) !== b.dataset.k);
+  queue = queue.filter(x => key(x) !== k);
   if (!queue.length && saved !== null) {
     speed = saved; saved = null;
   }
   renderHold();
   paint();
+};
+
+const pinnedListEl = $('#console-pinned');
+if (pinnedListEl) {
+  pinnedListEl.onclick = e => {
+    const b = e.target.closest('.fc-action-btn'); if (!b) return;
+    handleActionClick(b.dataset.k, b.dataset.d);
+  };
+}
+
+// 상단 알람 홀드 박스 버튼 클릭 처리
+const holdClickEl = $('#hold');
+if (holdClickEl) {
+  holdClickEl.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    handleActionClick(b.dataset.k, b.dataset.d);
+  };
+}
+
+$('#play').onclick = () => playing ? pause() : play();
+$('#rst').onclick = () => {
+  stop(); cur = 0; queue = []; saved = null; decided = {};
+  resetLive(); stepLive(0); paint(); renderHold();
+};
+$('#end').onclick = () => {
+  stop(); cur = N() - 1; queue = []; saved = null; decided = {};
+  fillAll(); paint(); renderHold();
 };
 
 window.addEventListener('resize', () => {
