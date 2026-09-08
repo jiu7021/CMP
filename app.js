@@ -2,7 +2,6 @@
 const S = window.SCENARIOS;
 const $ = s => document.querySelector(s);
 
-const GRADE_KO = { CRIT: '긴급 (설비정지)', MAJ: '중요 (차기PM)', MIN: '주의', INFO: '자동보정완료' };
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 let COL = {}, C = {};
@@ -25,10 +24,10 @@ function loadColors() {
 }
 loadColors();
 
-const SPEED = { 1: 1800, 5: 350, 20: 90, 50: 35 }; // Speed -> Step interval in ms
-const STEP_MIN = 6; // 6 min per wafer
+const SPEED = { 1: 1800, 5: 350, 20: 90, 50: 35 };
+const STEP_MIN = 6;
 
-let day = 0, eqp = 0, logv = 'alarm';
+let day = 0, eqp = 0, logv = 'all'; // Default to 'all' for unified view
 let cur = 99, playing = false, speed = 20, timer = null;
 let queue = [], saved = null;
 let live = {}, dIdx = {}, halt = {}, alarmAt = {}, replaced = {}, replaceIdx = {};
@@ -57,7 +56,7 @@ function stepLive(k) {
   S[day].equipments.forEach(e => {
     const L = live[e.id], s = e.series, n = L.mrr_act.length;
     if (halt[e.id]) {
-      // 해당 챔버만 정지됨! 구동 파라미터 소멸, 마모 진행 정지, 온도 하강
+      // 해당 챔버만 정지! 구동 파라미터 소멸, 마모 진행 정지
       const prev_temp = n ? L.temp[n - 1] : 34.0;
       L.mrr_act.push(0);
       L.mrr_pred.push(0);
@@ -84,7 +83,6 @@ function stepLive(k) {
         const new_wear = Math.max(1200.0 - past * 1.6, 400.0);
         L.wear.push(+new_wear.toFixed(1));
         L.rul.push(Math.max(0, Math.round((new_wear - 400.0) / 1.65)));
-        // 복구 후 정상 MRR로 복귀
         L.mrr_act.push(+(2200.0 + (Math.random() - 0.5) * 20.0).toFixed(1));
         L.mrr_pred.push(+(2200.0 + (Math.random() - 0.5) * 18.0).toFixed(1));
       } else {
@@ -97,7 +95,6 @@ function stepLive(k) {
     }
   });
 
-  // 이번 스텝에 발생한 알람 인덱스 등록
   S[day].alarms.forEach(a => {
     if (alarmAt[a.id] !== undefined || dIdx[a.eqp] < a.step) return;
     alarmAt[a.id] = k;
@@ -111,42 +108,65 @@ function fillAll() {
 
 const haltSteps = () => S[day].equipments.reduce((tot, e) => tot + (live[e.id] ? live[e.id].halt.reduce((x, y) => x + y, 0) : 0), 0);
 
-// ── SVG 차트 ──────────────────────────────────────────
+// ── SVG 차트 (Y축 스케일 최적화 & 일자 방지) ───────────────────
 const W = 760, H = 88, PL = 46, PR = 10, PT = 8, PB = 15;
 
-function chart({ label, unit, series, limits = [], marks = [], fills = [], base }) {
+function chart({ label, unit, series, limits = [], marks = [], fills = [], base, minSpread, clampFloor }) {
   const n = series[0].t.length, c = cur;
-  const ref = base || series.flatMap(s => s.v);
+  
+  // 정지(0)를 제외한 유효 가동 값으로 Y축 범위 계산 -> 1자 왜곡 완전 방지!
+  const nonZero = series.flatMap(s => s.v.filter(v => v > 0));
+  const ref = base || (nonZero.length ? nonZero : [100]);
   let lo = Math.min(...ref), hi = Math.max(...ref);
-  const shown = limits.filter(l => l.v >= lo - (hi - lo) * 0.6 && l.v <= hi + (hi - lo) * 0.6);
+
+  const spread = hi - lo;
+  const targetMinSpread = minSpread || (hi * 0.12) || 20;
+  if (spread < targetMinSpread) {
+    const mid = (hi + lo) / 2;
+    lo = mid - targetMinSpread / 2;
+    hi = mid + targetMinSpread / 2;
+  }
+
+  const shown = limits.filter(l => l.v >= lo - (hi - lo) * 0.5 && l.v <= hi + (hi - lo) * 0.5);
   shown.forEach(l => { lo = Math.min(lo, l.v); hi = Math.max(hi, l.v); });
+
   const pad = (hi - lo) * 0.12 || 1;
-  const floor0 = Math.min(...ref) >= 0;
   lo -= pad; hi += pad;
-  if (floor0 && lo < 0) lo = 0;
+  if (clampFloor !== undefined && lo < clampFloor) lo = clampFloor;
 
   const X = i => PL + i * (W - PL - PR) / (n - 1);
-  const Y = v => PT + (hi - v) * (H - PT - PB) / (hi - lo);
+  const Y = v => {
+    // 0값(정지)은 하단 바닥선(H - PB)에 닿도록 클램핑
+    if (v <= 0) return H - PB;
+    const clamped = Math.min(Math.max(v, lo), hi);
+    return PT + (hi - clamped) * (H - PT - PB) / (hi - lo);
+  };
+
   const line = vs => vs.slice(0, c + 1).map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
   let g = '';
 
+  // 정지 구간 음영
   fills.filter(f => f[0] <= c).forEach(f => {
     const x0 = X(f[0]), x1 = X(Math.min(f[1], c));
-    g += `<rect x="${x0}" y="${PT}" width="${Math.max(x1 - x0, 1.5)}" height="${H - PT - PB}" fill="${f[2]}" opacity=".18"/>`;
+    g += `<rect x="${x0}" y="${PT}" width="${Math.max(x1 - x0, 1.5)}" height="${H - PT - PB}" fill="${f[2]}" opacity=".22"/>`;
   });
+  // 알람 발생 시점 세로선
   marks.filter(m => m[0] <= c).forEach(m => {
     const x = X(m[0]);
-    g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${m[1]}" stroke-width="1.2" opacity=".7"/>`;
+    g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${m[1]}" stroke-width="1.2" opacity=".75"/>`;
   });
+  // 판정 기준선
   shown.forEach(l => {
     const y = Y(l.v);
     g += `<line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="${l.c}" stroke-width="1" stroke-dasharray="3 3" opacity=".75"/>`
        + `<text x="${W - PR}" y="${y - 3}" fill="${l.c}" font-size="9" text-anchor="end" opacity=".9">${l.t}</text>`;
   });
+  // 데이터 곡선
   series.forEach(s => {
     g += `<path d="${line(s.v)}" fill="none" stroke="${s.c}" stroke-width="${s.dyn ? 1 : 1.4}"${s.dyn ? ' stroke-dasharray="4 3" opacity=".8"' : ''}/>`;
   });
 
+  // 현재 재생 커서
   if (c < n - 1) {
     const x = X(c);
     g += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H - PB}" stroke="${C.ink}" stroke-width="1" opacity=".45"/>`;
@@ -182,7 +202,7 @@ function renderCharts() {
         { v: 2200, c: C.ok, t: '목표 MRR 2200' },
         { v: 2100, c: C.bad, t: '하한 관리선 2100' }
       ],
-      marks, fills
+      minSpread: 180, clampFloor: 2000, marks, fills
     }),
     chart({
       label: '캐리어 다운포스 압력', unit: '[psi] · 레시피 목표 3.80 psi',
@@ -191,7 +211,7 @@ function renderCharts() {
         { v: 4.10, c: C.bad, t: '4.10 상한' },
         { v: 3.50, c: C.min, t: '3.50 하한' }
       ],
-      marks, fills
+      minSpread: 0.8, clampFloor: 3.2, marks, fills
     }),
     chart({
       label: '슬러리 공급 유량', unit: '[ml/min] · 목표 220.0 ml/min',
@@ -200,13 +220,13 @@ function renderCharts() {
         { v: 236, c: C.min, t: '236 상한' },
         { v: 204, c: C.bad, t: '204 하한 (자동보정)' }
       ],
-      marks, fills
+      minSpread: 50, clampFloor: 170, marks, fills
     }),
     chart({
       label: '테이블 모터 마찰 전류', unit: '[A] · 패드 마찰 특성 지표',
       series: [{ t: s.t, v: L.curr, c: C.ink }],
       limits: [{ v: 16.5, c: C.bad, t: '16.5A 마찰 한계' }],
-      marks, fills
+      minSpread: 4.0, clampFloor: 12.0, marks, fills
     }),
     chart({
       label: '폴리싱 패드 잔여 홈 깊이 & RUL', unit: '[μm] · 400μm 도달 시 즉시 정지',
@@ -215,49 +235,158 @@ function renderCharts() {
         { v: 480, c: C.min, t: '480 주의 (차기PM)' },
         { v: 400, c: C.bad, t: '400 한계 (즉시정지)' }
       ],
-      marks, fills
+      base: [380, 1220], marks, fills
     })
   ].join('');
 }
 
-// ── 이력 및 알람 ────────────────────────────────────────
-const seen = () => S[day].alarms.filter(a => alarmAt[a.id] !== undefined).sort((x, y) => alarmAt[x.id] - alarmAt[y.id]);
-const seenAct = () => S[day].actions.filter(c => dIdx[c.eqp] >= c.step).sort((x, y) => x.step - y.step);
+// ── CMP 물리 거동 트윈 애니메이션 업데이트 ───────────────────
+function renderTwin() {
+  const d = S[day], e = d.equipments[eqp], L = live[e.id];
+  const isHalted = halt[e.id];
+  const card = $('#cmp-twin-card');
+  const dot = $('#twin-dot');
+  const badge = $('#twin-status-badge');
+  const overlay = $('#cmp-halt-overlay');
+  const chName = $('#twin-ch-name');
+
+  if (chName) chName.textContent = `${e.id} — ${e.type}`;
+
+  if (isHalted) {
+    if (card) card.classList.add('is-halted');
+    if (dot) { dot.classList.add('halted'); }
+    if (badge) badge.innerHTML = `<span class="badge bad">🔴 단독 정지 (HALTED)</span>`;
+    if (overlay) overlay.style.opacity = '1';
+
+    $('#g-mrr').textContent = '0 Å/min';
+    $('#g-mrr').className = 'gauge-val alert';
+    $('#g-mrr-err').textContent = '설비 정지 상태';
+    $('#g-press').textContent = '0.00 psi';
+    $('#g-press').className = 'gauge-val alert';
+    $('#g-flow').textContent = '0.0 ml/min';
+    $('#g-flow').className = 'gauge-val alert';
+    $('#g-wear').textContent = `${L.wear[cur] || 400.0} μm`;
+    $('#g-wear').className = 'gauge-val alert';
+    $('#g-rul').textContent = '잔여 0매 (교체 대기)';
+  } else {
+    if (card) card.classList.remove('is-halted');
+    if (dot) { dot.classList.remove('halted'); }
+    if (badge) badge.innerHTML = `<span class="badge ok">🟢 정상 가동 중 (RUNNING)</span>`;
+    if (overlay) overlay.style.opacity = '0';
+
+    const mrrP = L.mrr_pred[cur] || 2200.0;
+    const mrrA = L.mrr_act[cur] || 2200.0;
+    const pVal = L.press[cur] || 3.8;
+    const fVal = L.flow[cur] || 220.0;
+    const wVal = L.wear[cur] || 950.0;
+    const rVal = L.rul[cur] || 320;
+
+    $('#g-mrr').textContent = `${mrrP.toFixed(1)} Å/min`;
+    $('#g-mrr').className = 'gauge-val ok';
+    $('#g-mrr-err').textContent = `실측: ${mrrA.toFixed(1)} Å/min (오차 ${(mrrP - mrrA).toFixed(1)})`;
+    $('#g-press').textContent = `${pVal.toFixed(2)} psi`;
+    $('#g-press').className = 'gauge-val';
+    $('#g-flow').textContent = `${fVal.toFixed(1)} ml/min`;
+    $('#g-flow').className = 'gauge-val';
+    $('#g-wear').textContent = `${wVal.toFixed(1)} μm`;
+    $('#g-wear').className = wVal <= 480 ? 'gauge-val warn' : 'gauge-val';
+    $('#g-rul').textContent = `잔여 약 ${rVal}매 (한계 400μm)`;
+  }
+}
+
+// ── 조치 이력 통합 뷰 (사람 개입 + 자동 보정 동시 표출) ────────
+const seenAlarms = () => S[day].alarms.filter(a => alarmAt[a.id] !== undefined);
+const seenActions = () => S[day].actions.filter(c => dIdx[c.eqp] >= c.step);
 
 function renderLog() {
-  const d = S[day], vis = seen();
-  const legend = `<div class="legend">` + Object.entries(GRADE_KO).map(([k, v]) =>
-    `<span><i style="background:${COL[k]}"></i>${v}</span>`).join('') + `</div>`;
+  const d = S[day];
+  const alarms = seenAlarms();
+  const actions = seenActions();
 
-  let rows;
-  if (logv === 'alarm') {
-    rows = vis.slice().reverse().map(a => {
-      const sub = a.sub && a.sub.length ? `<p>파생 징후 ${a.sub.length}건 동반 — ${[...new Set(a.sub.map(x => x.ko))].join(', ')}</p>` : '';
-      const end = dIdx[a.eqp] < a.endStep ? '정지 진행 중' : '~' + a.end;
-      return `<div class="row"><span class="led ${a.grade}"></span><span class="tm">${a.time}</span>
-        <span class="t"><b>${a.ko}</b><i>${a.eqp}</i>${sub}</span>
-        <span class="r">${a.value} · ${a.repeat}회 발생<br>${end}</span></div>`;
-    }).join('');
-  } else {
-    rows = seenAct().reverse().map(c => {
-      const dec = decided[key(c)];
-      const pill = c.auto ? `<span class="pill auto">자동 실행 (무중단)</span>`
-                 : dec ? `<span class="pill ${dec === '승인' ? 'auto' : 'man'}">사람 조치: ${dec}</span>`
-                 : `<span class="pill man">조치 승인 대기</span>`;
-      return `<div class="row"><span class="led ${c.grade}"></span><span class="tm">${c.time}</span>
-        <span class="t"><b>${c.act}</b><i>${c.eqp}</i> ${pill}
-        <p>${c.why}</p></span>
-        <span class="r">${c.result}</span></div>`;
-    }).join('');
-  }
-  $('#log').innerHTML = legend + (rows || '<p class="empty">아직 감지된 내역이 없습니다.</p>');
-  $('#na').textContent = vis.length;
-  $('#nc').textContent = seenAct().length;
+  // 통합 이벤트 스트림 생성
+  const events = [];
+
+  // 자동 보정 건
+  actions.filter(c => c.auto).forEach(c => {
+    events.push({
+      time: c.time,
+      step: c.step,
+      eqp: c.eqp,
+      type: 'auto',
+      grade: 'INFO',
+      badge: '⚡ R2R APC 자동 보정',
+      badgeClass: 'auto',
+      title: c.act,
+      desc: c.why,
+      result: c.result
+    });
+  });
+
+  // 사람 개입 건 (알람 및 수동 조치)
+  alarms.forEach(a => {
+    const act = actions.find(c => c.alarm_id === a.id);
+    const dec = act ? decided[key(act)] : null;
+    const isCrit = a.grade === 'CRIT';
+
+    let resultText = '조치 완료';
+    if (isCrit) {
+      resultText = dec === '승인' ? '조치 완료 · 챔버 재가동됨' : (dIdx[a.eqp] < a.endStep ? '단독 정지 중 · 승인 대기' : '~' + a.end);
+    } else {
+      resultText = '차기 PM 이관 등록됨';
+    }
+
+    events.push({
+      time: a.time,
+      step: a.step,
+      eqp: a.eqp,
+      type: 'man',
+      grade: a.grade,
+      badge: '👤 사람 개입 (소모품 PM)',
+      badgeClass: 'man',
+      title: `${a.ko} (${a.value})`,
+      desc: (act ? act.why : '') + (a.sub && a.sub.length ? ` [동반: ${a.sub.map(x=>x.ko).join(', ')}]` : ''),
+      result: resultText
+    });
+  });
+
+  // 시간순 정렬 (최신순 역순 표출)
+  events.sort((x, y) => x.step - y.step);
+
+  let filtered = events;
+  if (logv === 'auto') filtered = events.filter(e => e.type === 'auto');
+  if (logv === 'man')  filtered = events.filter(e => e.type === 'man');
+
+  const rows = filtered.slice().reverse().map(ev => {
+    const tagHtml = `<span class="badge-tag ${ev.badgeClass}">${ev.badge}</span>`;
+    const pill = ev.type === 'auto'
+      ? `<span class="pill auto">무중단 실시간 보정</span>`
+      : ev.result.includes('대기')
+        ? `<span class="pill man">⚠️ 정지 · 승인 대기</span>`
+        : `<span class="pill auto">확인 완료</span>`;
+
+    return `<div class="row">
+      <span class="led ${ev.grade}"></span>
+      <span class="tm">${ev.time}</span>
+      <span class="t">
+        ${tagHtml} <b>${ev.title}</b> <i>${ev.eqp}</i> ${pill}
+        <p>${ev.desc}</p>
+      </span>
+      <span class="r">${ev.result}</span>
+    </div>`;
+  }).join('');
+
+  $('#log').innerHTML = rows || '<p class="empty">현재 시점까지 발생한 이력이 없습니다.</p>';
+
+  const nAuto = events.filter(e => e.type === 'auto').length;
+  const nMan = events.filter(e => e.type === 'man').length;
+  if ($('#nall')) $('#nall').textContent = events.length;
+  if ($('#nauto')) $('#nauto').textContent = nAuto;
+  if ($('#nman')) $('#nman').textContent = nMan;
 }
 
 // ── 재생 & KPI ────────────────────────────────────────
 function renderKpi() {
-  const d = S[day], vis = seen(), act = seenAct();
+  const d = S[day], vis = seenAlarms(), act = seenActions();
   const auto = act.filter(c => c.auto).length;
   const prog = Math.max(...S[day].equipments.map(e => dIdx[e.id]));
   const raw = d.raw_cum[Math.max(prog, 0)];
@@ -266,8 +395,8 @@ function renderKpi() {
   $('#kpi').innerHTML = [
     ['원시 센서 알람', raw, '단순 임계 초과 시점'],
     ['근본원인 집약', vis.length + auto, vis.length ? `압축률 ${(100 - (vis.length + auto) / Math.max(raw, 1) * 100).toFixed(0)}%` : '—'],
-    ['자동 보정 완료', auto, 'Preston R2R 레시피 보정'],
-    ['사람 확인 필요', act.length - auto, '비가역 소모품 교체 (PM)'],
+    ['R2R 자동 보정', auto, 'Preston 레시피 보정 (무중단)'],
+    ['사람 조치 필요', act.length - auto, '비가역 소모품 교체 (PM)'],
     ['회피한 라인 정지', auto, '불필요한 설비 셧다운 차단'],
     ['정지 손실 시간', (hs * STEP_MIN) + '분', hs ? '조치 대기 중 챔버 단독 정지' : '정지 없음 (정상 가동)']
   ].map(([k, v, sb], i) => `<div class="kpi${i === 0 ? ' tint' : i === 1 ? ' tint-2' : ''}">
@@ -297,10 +426,11 @@ function renderHold() {
     const a = S[day].alarms.find(x => x.id === c.alarm_id);
     return `<div class="hold-in">
       <div class="hold-h"><span class="led CRIT"></span><b>${c.time} · ${c.eqp} — ${a ? a.ko : c.act}</b>
-        <span class="pill man">소모품 마모 · 사람 판단 및 교체 대기</span></div>
+        <span class="badge-tag man">👤 사람 개입 필요</span>
+        <span class="pill man">소모품 마모 · 단독 정지</span></div>
       <p><b>측정 상태:</b> ${a ? a.value : ''} &nbsp;·&nbsp; <b>필요 조치:</b> ${c.act}</p>
       <p class="why">${c.why}</p>
-      <p class="why" style="color:var(--bad)">⚠️ [단독 정지 상태]: ${c.eqp}의 테이블/헤드 모터가 정지(0 RPM)되었습니다. 다른 챔버는 정상 가동 중입니다. 판단이 지연될수록 정지 손실이 누적됩니다.</p>
+      <p class="why" style="color:var(--bad)">⚠️ [단독 정지 상태]: ${c.eqp}의 테이블 및 헤드 모터가 정지(0 RPM)되었습니다. 다른 챔버는 정상 가동 중입니다. 조치가 늦어질수록 정지 손실이 누적됩니다.</p>
       <div class="hold-b">
         <button data-k="${key(c)}" data-d="승인">소모품(패드) 교체 완료 · 재가동</button>
         <button class="ghost" data-k="${key(c)}" data-d="보류">정지 상태 유지</button>
@@ -314,7 +444,6 @@ function step() {
   cur++;
   stepLive(cur);
 
-  // 긴급(CRIT) 건 발생 시: 해당 챔버만 정지시키고 대기 큐에 등록, 배속을 x1로 감속
   const hits = S[day].actions.filter(c => !c.auto && c.grade === 'CRIT'
     && dIdx[c.eqp] === c.step && !decided[key(c)] && !queue.includes(c));
 
@@ -343,6 +472,7 @@ function stop()  { playing = false; clearTimeout(timer); renderBar(); }
 
 function paint() {
   paintTabs();
+  renderTwin();
   renderCharts();
   renderLog();
   renderKpi();
@@ -369,7 +499,7 @@ function render() {
   paint();
 }
 
-// ── 초기화 & 이벤트 리스너 ────────────────────────────
+// ── 이벤트 리스너 ─────────────────────────────────────
 $('#days').innerHTML = S.map((d, i) =>
   `<button data-i="${i}"><b>${d.date.slice(5)}</b><span>${d.title}</span></button>`).join('');
 $('#spd').innerHTML = [1, 5, 20, 50].map(s => `<button data-s="${s}">x${s}</button>`).join('');
@@ -386,6 +516,7 @@ $('#eqps').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   eqp = +b.dataset.i;
   document.querySelectorAll('#eqps button').forEach((x, i) => x.classList.toggle('on', i === eqp));
+  renderTwin();
   renderCharts();
 };
 
@@ -410,15 +541,14 @@ $('#spd').onclick  = e => {
   speed = +b.dataset.s; saved = null; renderBar();
 };
 
-// ── 소모품 교체 및 재가동 복구 핸들러 ─────────────────
 $('#hold').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   const c = queue.find(x => key(x) === b.dataset.k);
   decided[b.dataset.k] = b.dataset.d;
 
   if (b.dataset.d === '승인' && c) {
-    halt[c.eqp] = false; // 해당 챔버 정지 해제 -> 재가동!
-    replaced[c.eqp] = true; // 소모품 교체 완료 (패드 새것 장착)
+    halt[c.eqp] = false;
+    replaced[c.eqp] = true;
     replaceIdx[c.eqp] = dIdx[c.eqp];
   }
   queue = queue.filter(x => key(x) !== b.dataset.k);

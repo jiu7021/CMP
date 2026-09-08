@@ -78,23 +78,135 @@
         </div>
       </section>
 
-      <!-- 가상계측 & 센서 트렌드 -->
+      <!-- 가상계측 & 센서 트렌드 & 물리 거동 트윈 -->
       <section class="panel" id="s-chart">
         <div class="panel-head">
-          <h2>가상계측 · 센서 트렌드</h2>
+          <h2>가상계측 · 센서 트렌드 & 챔버 물리 거동</h2>
           <nav id="eqps" class="tabs sm"></nav>
         </div>
+
+        <!-- CMP 연마 챔버 실시간 물리 트윈 애니메이션 위젯 -->
+        <div class="cmp-twin-card" id="cmp-twin-card">
+          <div class="cmp-twin-header">
+            <div class="cmp-twin-title">
+              <span class="pulse-dot" id="twin-dot"></span>
+              <b>CMP 연마 챔버 실시간 물리 거동 (<span id="twin-ch-name">Ch.A — STI Bulk</span>)</b>
+            </div>
+            <div class="cmp-twin-status" id="twin-status-badge">
+              <span class="badge ok">🟢 정상 가동 중 (RUNNING)</span>
+            </div>
+          </div>
+
+          <div class="cmp-twin-body">
+            <!-- SVG Chamber Schematic -->
+            <div class="cmp-stage-view">
+              <svg id="cmp-svg-sim" viewBox="0 0 360 220" class="cmp-svg">
+                <defs>
+                  <!-- Pad Gradient -->
+                  <radialGradient id="pad-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#e0a96d"/>
+                    <stop offset="60%" stop-color="#c68b59"/>
+                    <stop offset="100%" stop-color="#99582a"/>
+                  </radialGradient>
+                  <!-- Silicon Wafer Iridescent Gradient -->
+                  <linearGradient id="wafer-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#48cae4"/>
+                    <stop offset="35%" stop-color="#90e0ef"/>
+                    <stop offset="70%" stop-color="#b5179e"/>
+                    <stop offset="100%" stop-color="#7209b7"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Base Enclosure -->
+                <rect x="15" y="15" width="330" height="190" rx="14" fill="var(--surface-sunken)" stroke="var(--line)" stroke-width="1.5"/>
+                <rect x="25" y="25" width="310" height="170" rx="10" fill="rgba(0,0,0,0.2)"/>
+
+                <!-- Rotating Platen (Polishing Pad) -->
+                <g id="cmp-platen" class="spin-platen">
+                  <circle cx="135" cy="115" r="76" fill="url(#pad-grad)" stroke="#d4a373" stroke-width="2.5"/>
+                  <circle cx="135" cy="115" r="58" fill="none" stroke="rgba(0,0,0,0.22)" stroke-width="1.5" stroke-dasharray="8 5"/>
+                  <circle cx="135" cy="115" r="40" fill="none" stroke="rgba(0,0,0,0.22)" stroke-width="1.5" stroke-dasharray="6 4"/>
+                  <circle cx="135" cy="115" r="22" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1.5"/>
+                  <line x1="60" y1="115" x2="210" y2="115" stroke="rgba(0,0,0,0.28)" stroke-width="1.5"/>
+                  <line x1="135" y1="40" x2="135" y2="190" stroke="rgba(0,0,0,0.28)" stroke-width="1.5"/>
+                </g>
+
+                <!-- Rotating Wafer Head (Carrier) -->
+                <g id="cmp-carrier-group" class="carrier-group">
+                  <g id="cmp-carrier" class="spin-carrier">
+                    <circle cx="175" cy="95" r="41" fill="none" stroke="#8e8e93" stroke-width="3.5"/>
+                    <circle cx="175" cy="95" r="38" fill="url(#wafer-grad)" opacity="0.9"/>
+                    <circle cx="175" cy="95" r="14" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+                    <line x1="140" y1="95" x2="210" y2="95" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+                    <line x1="175" y1="60" x2="175" y2="130" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+                  </g>
+                  <path d="M175,38 L175,52 M171,48 L175,53 L179,48" stroke="#30d158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <text x="175" y="34" fill="#30d158" font-size="9" font-weight="700" text-anchor="middle">DOWNFORCE</text>
+                </g>
+
+                <!-- Diamond Conditioner Arm -->
+                <g id="cmp-conditioner" class="sweep-cond">
+                  <path d="M68,140 L92,120" stroke="#a1a1a6" stroke-width="5" stroke-linecap="round"/>
+                  <circle cx="92" cy="120" r="15" fill="#636366" stroke="#ffd60a" stroke-width="2"/>
+                  <circle cx="92" cy="120" r="8" fill="#48484a" stroke="rgba(255,255,255,0.5)" stroke-dasharray="3 2"/>
+                </g>
+
+                <!-- Slurry Dispense Nozzle & Droplets -->
+                <g id="cmp-slurry-arm">
+                  <path d="M85,35 L125,65" stroke="#0a84ff" stroke-width="4" stroke-linecap="round"/>
+                  <circle cx="125" cy="65" r="4.5" fill="#0a84ff"/>
+                  <circle id="slurry-drop1" class="drip-slurry-1" cx="125" cy="74" r="3" fill="#64d2ff"/>
+                  <circle id="slurry-drop2" class="drip-slurry-2" cx="128" cy="84" r="2.5" fill="#64d2ff"/>
+                </g>
+
+                <!-- Halt Warning Banner on SVG -->
+                <g id="cmp-halt-overlay" opacity="0" style="transition: opacity 0.25s ease;">
+                  <rect x="15" y="15" width="330" height="190" rx="14" fill="rgba(255,69,58,0.25)" stroke="#ff453a" stroke-width="2"/>
+                  <rect x="55" y="86" width="250" height="48" rx="8" fill="rgba(20,20,22,0.92)" stroke="#ff453a" stroke-width="1.5"/>
+                  <text x="180" y="107" fill="#ff453a" font-size="13.5" font-weight="700" text-anchor="middle">⚠️ 챔버 단독 정지 (HALTED)</text>
+                  <text x="180" y="123" fill="rgba(255,255,255,0.85)" font-size="11" text-anchor="middle">소모품 수명 한계 · 교체 승인 대기</text>
+                </g>
+              </svg>
+            </div>
+
+            <!-- Live Telemetry Gauges -->
+            <div class="cmp-gauges-grid">
+              <div class="gauge-card">
+                <div class="gauge-lab">가상계측 MRR (제거율)</div>
+                <div class="gauge-val ok" id="g-mrr">2200 Å/min</div>
+                <div class="gauge-sub" id="g-mrr-err">실측 연동 모니터링</div>
+              </div>
+              <div class="gauge-card">
+                <div class="gauge-lab">캐리어 다운포스 압력</div>
+                <div class="gauge-val" id="g-press">3.80 psi</div>
+                <div class="gauge-sub">목표: 3.80 psi (R2R 연동)</div>
+              </div>
+              <div class="gauge-card">
+                <div class="gauge-lab">슬러리 공급 유량</div>
+                <div class="gauge-val" id="g-flow">220.0 ml/min</div>
+                <div class="gauge-sub">목표: 220.0 ml/min</div>
+              </div>
+              <div class="gauge-card">
+                <div class="gauge-lab">패드 잔여 홈 & RUL</div>
+                <div class="gauge-val warn" id="g-wear">980.0 μm</div>
+                <div class="gauge-sub" id="g-rul">잔여 351매 (한계 400μm)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="charts"></div>
-        <p class="hint" style="margin-top:14px">세로선은 알람 발생 시점, 붉은 음영은 해당 챔버가 단독 정지된 구간입니다.
-        가상계측 파란선은 센서로부터 실시간 예측한 MRR(연마 제거율)이며, 주황선은 실측값입니다.</p>
+        <p class="hint" style="margin-top:14px">세로선은 이상 감지 시점, 붉은 음영은 해당 챔버가 단독 정지된 구간입니다.
+        Y축 스케일은 실제 공정 관리 밴드에 맞춰 최적화되어, 정지 구간 발생 시에도 미세 파라미터 변동이 1자로 뭉개지지 않고 선명하게 표시됩니다.</p>
       </section>
 
-      <!-- 알람 & 조치 이력 -->
+      <!-- 알람 & 조치 이력 (통합 뷰) -->
       <section class="panel" id="s-log">
-        <div class="panel-head"><h2>알람 · 자동 보정 이력</h2>
+        <div class="panel-head"><h2>알람 · 조치 종합 이력</h2>
           <nav id="logtabs" class="tabs sm">
-            <button class="on" data-v="alarm">사람 개입 알람 <span id="na"></span></button>
-            <button data-v="action">자동 보정 이력 <span id="nc"></span></button>
+            <button class="on" data-v="all">전체 이력 <span id="nall"></span></button>
+            <button data-v="auto">⚡ 자동 보정 (APC) <span id="nauto"></span></button>
+            <button data-v="man">👤 사람 조치 (PM 필요) <span id="nman"></span></button>
           </nav></div>
         <div id="log"></div>
       </section>
