@@ -7,8 +7,100 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="snowui-shell.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="snowui-shell.css?v=3">
+<link rel="stylesheet" href="style.css?v=3">
+<style>
+.sidebar-profile-footer {
+  margin-top: auto !important;
+  padding-top: 14px !important;
+  border-top: 1px solid var(--line) !important;
+  flex-shrink: 0 !important;
+}
+.sidebar-profile-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.profile-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35) !important;
+  user-select: none !important;
+}
+.profile-info {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  line-height: 1.25 !important;
+}
+.profile-name {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--ink, #ffffff) !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.01em !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+}
+.profile-sub {
+  font-size: 12px !important;
+  color: #00f0ff !important;
+  font-weight: 400 !important;
+}
+.profile-role {
+  font-size: 12px !important;
+  color: var(--ink-40, #94a3b8) !important;
+  white-space: nowrap !important;
+  margin-top: 2px !important;
+}
+.sidebar-profile-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+  font-size: 11px !important;
+  color: var(--ink-40, #94a3b8) !important;
+}
+.profile-tag {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink-40, #94a3b8) !important;
+  padding: 3px 9px !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+:root[data-theme="light"] .sidebar-profile-footer {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+:root[data-theme="light"] .profile-name {
+  color: #1c1c1e !important;
+}
+:root[data-theme="light"] .profile-sub {
+  color: #0284c7 !important;
+}
+:root[data-theme="light"] .profile-role {
+  color: #64748b !important;
+}
+:root[data-theme="light"] .profile-tag {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #64748b !important;
+}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -27,10 +119,20 @@
 
   <nav class="rail-group rail-ext">
     <a class="rail-row" href="./">시뮬레이터로 복귀 ↗</a>
-    <a class="rail-row" href="https://github.com/jiu7021/CMP" target="_blank">저장소 ↗</a>
   </nav>
 
-  <div class="rail-foot">SnowUI Design System</div>
+  <div class="sidebar-profile-footer">
+    <div class="sidebar-profile-card">
+      <div class="profile-avatar">JW</div>
+      <div class="profile-info">
+        <div class="profile-name">양지우 <span class="profile-sub">Jiwoo Yang</span></div>
+        <div class="profile-role">전기공학과</div>
+      </div>
+    </div>
+    <div class="sidebar-profile-meta">
+      <span class="profile-tag">CMP Project</span>
+    </div>
+  </div>
 </aside>
 
 <div class="col">
@@ -178,8 +280,7 @@
     </main>
 
     <footer class="ftr">
-      반도체 전공정 CMP 가상계측 & 알람 이원화 프로젝트 · <a class="inline-link" href="./">시뮬레이터로 이동</a> ·
-      <a class="inline-link" href="https://github.com/jiu7021/CMP" target="_blank">GitHub 저장소</a>
+      반도체 전공정 CMP 가상계측 & 알람 이원화 프로젝트 · <a class="inline-link" href="./">시뮬레이터로 이동</a>
     </footer>
   </div>
 </div>

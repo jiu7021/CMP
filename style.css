@@ -1380,3 +1380,100 @@ main {
     bottom: 16px;
   }
 }
+
+/* ═══ Author Profile Card in Lower Sidebar (P-T Workbench Style) ═══ */
+.sidebar-profile-footer {
+  margin-top: auto !important;
+  padding-top: 14px !important;
+  border-top: 1px solid var(--line) !important;
+  flex-shrink: 0 !important;
+}
+.sidebar-profile-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.sidebar-profile-footer .sidebar-profile-card {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  border-top: none !important;
+}
+.profile-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35) !important;
+  user-select: none !important;
+}
+.profile-info {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  line-height: 1.25 !important;
+}
+.profile-name {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--ink, #ffffff) !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.01em !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+}
+.profile-sub {
+  font-size: 12px !important;
+  color: #00f0ff !important;
+  font-weight: 400 !important;
+}
+.profile-role {
+  font-size: 12px !important;
+  color: var(--ink-40, #94a3b8) !important;
+  white-space: nowrap !important;
+  margin-top: 2px !important;
+}
+.sidebar-profile-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+  font-size: 11px !important;
+  color: var(--ink-40, #94a3b8) !important;
+}
+.profile-tag {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink-40, #94a3b8) !important;
+  padding: 3px 9px !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+:root[data-theme="light"] .sidebar-profile-footer {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+:root[data-theme="light"] .profile-name {
+  color: #1c1c1e !important;
+}
+:root[data-theme="light"] .profile-sub {
+  color: #0284c7 !important;
+}
+:root[data-theme="light"] .profile-role {
+  color: #64748b !important;
+}
+:root[data-theme="light"] .profile-tag {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #64748b !important;
+}
